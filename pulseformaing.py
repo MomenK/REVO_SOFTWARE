@@ -1,0 +1,59 @@
+import serial
+
+import numpy as np
+
+get_bin = lambda x, n: format(x, 'b').zfill(n)
+
+
+def data_package (channel, address, data):
+    channel_b = get_bin(channel,5)
+    address_b = get_bin(address,8)
+    data_b = get_bin(data,3)
+    full_b_int_bytes = int(channel_b + address_b + data_b, 2).to_bytes(2, 'big')
+    print(str(full_b_int_bytes).replace('\\x', "")[1:])
+    return bytearray(full_b_int_bytes)
+
+
+
+def send_data(port, channel, address, data):
+    data = data_package(channel, address, data)
+    # print(data)
+    port.write(data)
+    pass
+
+
+# f = open("pulser.mif", "r")
+# lines = f.readlines()
+# f.close()
+
+# address_counter = 0
+
+# for l in lines:
+#     print(get_bin(address_counter,7),l)
+#     data_package(0,address_counter,int(l,2))
+#     address_counter = address_counter +1
+
+
+
+
+# print(bytearray(b'\xf8\x00'))
+
+f = open("pulser.mif", "r")
+lines = f.readlines()
+f.close()
+
+ser = serial.Serial('COM3', 8*1000000, timeout=2)  # open serial port
+ser.flushInput()
+ser.flushOutput()
+ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
+ser.write(bytearray(b'\x00\x02')) # set mode to Pulseforming
+
+
+address_counter = 0
+
+for l in lines:
+    # print(get_bin(address_counter,8),l)
+    send_data(ser,4,address_counter,int(l,2))
+    address_counter = address_counter +1
+
+f.close()
