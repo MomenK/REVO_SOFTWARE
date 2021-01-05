@@ -24,7 +24,8 @@ def BModeTask(q,q_enabler,q_fps):
 
 
 def MModeTask(m_q,m_q_enabler):
-    ser = RSerial('COM4',8*1000000,2048*2,2)
+    # ser = RSerial('COM4',8*1000000,2048*2,2)  # 16 bits mode
+    ser = RSerial('COM4',8*1000000,2048*1,2)   # 8 bits mode
     enabler = False
     counter = 0
     agg = []
@@ -37,7 +38,8 @@ def MModeTask(m_q,m_q_enabler):
 
         if  enabler== True:
             t0 = t1
-            data2 = ser.fetch()
+            # data2 = ser.fetch() # 16 bits mode
+            data2 = ser.fetch8()  # 8 bits mode
             agg.append(data2)
             counter=counter+1
             t1 = time.perf_counter()

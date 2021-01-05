@@ -15,12 +15,7 @@ class RSerial(serial.Serial):
     def fetch(self):
         super().flushInput()
         super().flushOutput()
-     
         super().write(bytearray(b'\xfa\x0a')) # Trigger
-     
-   
-
-        
         
         data = super().read(self.buff_size)
  
@@ -32,11 +27,11 @@ class RSerial(serial.Serial):
     def fetch8(self):
         super().flushInput()
         super().flushOutput()
-        super().write(b'a')
+        super().write(bytearray(b'\xfa\x0a')) # Trigger
         
         
         data = super().read(self.buff_size)
-        # print(super().inWaiting())
+        
         assert len(data) == self.buff_size , 'Connection issue we got '+ str(len(data)) + ' Instead of ' + str(self.buff_size)
         data1 = np.frombuffer(data, dtype=np.int8, count=-1).reshape(self.Channels,-1)
         data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
