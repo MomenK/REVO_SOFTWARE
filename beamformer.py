@@ -34,7 +34,7 @@ print(data_package(4,0))
 delayV = 10
 
 
-ser = serial.Serial('COM3', 8*1000000, timeout=2)  # open serial port
+ser = serial.Serial('COM5', 8*1000000, timeout=2)  # open serial port
 ser.flushInput()
 ser.flushOutput()
 ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
