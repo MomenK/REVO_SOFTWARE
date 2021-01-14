@@ -1,8 +1,9 @@
 import serial
-
 import numpy as np
-
 import time
+import settings
+settings.init()
+
 
 def write_spi (port,data):
     a =  data[0:2]
@@ -22,7 +23,7 @@ def write_spi (port,data):
 
 
 
-ser = serial.Serial('COM3', 8*1000000, timeout=2)  # open serial port
+ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial port
 ser.flushInput()
 ser.flushOutput()
 ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
@@ -34,7 +35,7 @@ ser.write(bytearray(b'\x00\x04')) # set mode to beamforming
 write_spi(ser, '2000000')
 
 # Write data
-write_spi(ser, '2020000')
+write_spi(ser, '2020000') #  2020380 for SYNC
 
 # Read Mode 
 write_spi(ser, '2000002')

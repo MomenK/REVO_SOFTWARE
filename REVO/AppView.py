@@ -6,6 +6,7 @@ from matplotlib.backend_bases import key_press_handler
 import matplotlib.pyplot as plt
 
 import numpy as np
+import time
 
 
 
@@ -18,10 +19,10 @@ class settings:
 settings = settings()
 
 def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
-    global canvas, toolbar, image, button_stop, label, root, var
+    global canvas, toolbar, image, button_stop, label, root, var, fig, image
     
     root = tkinter.Tk()
-    root.wm_title("Embedding in Tk")  
+    root.wm_title("REVO IMAGING TOOL")  
     root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(BModeInstance,MModeInstance,root))
 
     var = tkinter.DoubleVar()
@@ -30,7 +31,7 @@ def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
 
     fig = plt.figure(figsize=(2,4), dpi=180)
     img =  np.zeros((1024,32))
-    image = plt.imshow(img, cmap='gray',interpolation='nearest',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
+    image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
 
     canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
     canvas.draw()
@@ -39,7 +40,7 @@ def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     toolbar = NavigationToolbar2Tk(canvas, root)
     toolbar.update()
     canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-    canvas.mpl_connect("key_press_event", on_key_press)
+    # canvas.mpl_connect("key_press_event", on_key_press)
 
 
     prompt = 'fps'
@@ -50,10 +51,12 @@ def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     button_quit = tkinter.Button(master=root, text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
     button_stop =tkinter.Button(master=root, text="Stop", command=lambda:_toggle(q_enabler))
     button_Mode = tkinter.Button(master=root, text="Mode", command=_mode)
+    button_Save = tkinter.Button(master=root, text="Save", command=_save)
 
     button_quit.pack(side=tkinter.LEFT)
     button_stop.pack(side=tkinter.LEFT)
     button_Mode.pack(side=tkinter.LEFT)
+    button_Save.pack(side=tkinter.LEFT)
     button_M_stop.pack(side=tkinter.RIGHT)
 
   
@@ -61,9 +64,9 @@ def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     updateplot(q,q_fps)
     root.mainloop()
 
-def on_key_press(event):
-    print("you pressed {}".format(event.key))
-    key_press_handler(event, canvas, toolbar)
+# def on_key_press(event):
+#     print("you pressed {}".format(event.key))
+#     key_press_handler(event, canvas, toolbar)
 
 
 def _quitAll(process,M_process, top):
@@ -76,6 +79,17 @@ def _quitAll(process,M_process, top):
 
 def _mode():
     settings.modeVar = not settings.modeVar
+
+
+def _save():
+    plt.axis('off')
+    file =  'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    Current_Array = DataToPlot
+    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 1000)
+    plt.axis('on')
+
+    np.save('Arrays/' + file,Current_Array)
+    
     
 
 def _toggle(q_enabler):
@@ -96,7 +110,8 @@ def _Mtoggle(m_q_enabler):
 
 
 def updateplot(q,q_fps):
-    
+    global DataToPlot
+
     try:       
         
         result=q.get_nowait()
@@ -108,6 +123,7 @@ def updateplot(q,q_fps):
         maxScale =  var.get()/100 * DataToPlot.max()
         
         image.set_data(DataToPlot)
+        # print(maxScale)
         image.set_clim(vmin=0, vmax=maxScale)
         # DataToPlot.min()
 
@@ -125,9 +141,9 @@ def updateplot(q,q_fps):
 def M_mode_plot(agg,boy,timestampArr):
     
     result = np.array(agg)
+    timeStamp = np.array(timestampArr)
 
     Mimage =  result
-
     # print(Mimage.shape)
     Mimage = Mimage.transpose(1,0,2)
     # print(Mimage.shape)
@@ -135,12 +151,38 @@ def M_mode_plot(agg,boy,timestampArr):
     # print(Mimage.shape)
     print(len(boy))
     plt.close()
+
     plt.figure()
     print('average fps: ' + str(sum(boy)/len(boy)))
     Image = plt.imshow(Mimage,cmap='gray',interpolation='nearest', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto',animated=False)
-    Image.set_clim(vmin=Mimage.min(), vmax=Mimage.max())
+    
+    Image.set_clim(vmin=0, vmax=200)  # Has to be passed from inside the other process
+    
+    
+    plt.axis('off')
+    file =  'M_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 1000)
+    plt.axis('on')
+
+    print(timeStamp.shape,Mimage.shape)
+
+    np.save('Arrays/' + file,Mimage)
+    np.save('Arrays/' + 'T'+ file,timeStamp)
+
     plt.show()
-    plt.plot(boy)
+
+    fps = []
+    for i in range(0,1000-1):
+        fps.append(1/(timeStamp[i+1] - timeStamp [i]))
+
+
+
+    fig, axs = plt.subplots(3)
+    fig.suptitle('Vertically stacked subplots')
+    axs[0].plot(boy)
+    axs[1].plot(timeStamp)
+    axs[2].plot(fps)
     plt.show()
+
     print("Done")
 

@@ -1,13 +1,36 @@
+from sys import platform
 
+def init():
+    global BModePort, MModePort
+    if platform == "win32":
+        print("win32")
 
-# def init():
-#     global  stopper,Mstopper,modeVar
-#     modeVar = True
-#     stopper = True
-#     Mstopper = False
+        BModePort = "COM3"
+        MModePort = "COM4"
+    else:
+        print("linux")
 
-# # TO-DO: 
-# # 1 - Add the queues here
-# # 2 - Make the mode process native to the BMode and MMode task
-# # 3 - Make the Queues a class 
+        BModePort = "/dev/COM3"
+        MModePort = "/dev/COM4"
+
+# init()
+    
+# from sys import platform
+
+# class Rsetting:
+#     def __init__(self):
+#         if platform == "win32":
+#             print("win32")
+
+#             self.BModePort = "COM3"
+#             self.MModePort = "COM4"
+#         else:
+#             print("linux")
+
+#             self.BModePort = "/dev/COM3"
+#             self.MModePort = "/dev/COM4"
+
+    
+# R = Rsetting()
+# print(R.BModePort)
     

@@ -1,6 +1,7 @@
 import serial
-
 import numpy as np
+import settings
+settings.init()
 
 get_bin = lambda x, n: format(x, 'b').zfill(n)
 
@@ -30,11 +31,11 @@ def send_data(port, channel, delay):
 
 
 print(data_package(4,0))
-# print(bytearray(b'\xf8\x00'))
-delayV = 10
+
+delayV = 0
 
 
-ser = serial.Serial('COM3', 8*1000000, timeout=2)  # open serial port
+ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial port
 ser.flushInput()
 ser.flushOutput()
 ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
