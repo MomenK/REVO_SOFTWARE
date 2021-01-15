@@ -18,8 +18,8 @@ class settings:
 
 settings = settings()
 
-def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
-    global canvas, toolbar, image, button_stop, label, root, var, fig, image
+def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
+    global canvas, toolbar, image, button_stop, label, root, var, fig, image, ax
     
     root = tkinter.Tk()
     root.wm_title("REVO IMAGING TOOL")  
@@ -30,6 +30,7 @@ def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     scale.pack(anchor=tkinter.CENTER)
 
     fig = plt.figure(figsize=(2,4), dpi=180)
+    ax = fig.gca()
     img =  np.zeros((1024,32))
     image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
 
@@ -61,7 +62,8 @@ def plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
 
   
 
-    updateplot(q,q_fps)
+    updateplot(q,   q_fps)
+    M_updateplot(m_q, m_q_fps)
     root.mainloop()
 
 # def on_key_press(event):
@@ -79,14 +81,32 @@ def _quitAll(process,M_process, top):
 
 def _mode():
     settings.modeVar = not settings.modeVar
+    # plt.close()
+
+    # plt.figure(1)
+    # Image = plt.imshow(DataToPlot,cmap='gray',interpolation='nearest', aspect='auto',animated=False)
+    
+    # Image.set_clim(vmin=0, vmax=200)
+    # # plt.show(block=False)
+
+    # # plt.close()
+    # plt.figure(2)
+    # Image = plt.imshow(DataToPlot,cmap='gray',interpolation='nearest', aspect='auto',animated=False)
+    
+    # Image.set_clim(vmin=0, vmax=1)
+    # # plt.show(block=False)
+
+    # plt.show()
+
 
 
 def _save():
-    plt.axis('off')
+    
+    # ax.axis('off')
     file =  'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
     Current_Array = DataToPlot
-    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 1000)
-    plt.axis('on')
+    fig.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    ax.axis('on')
 
     np.save('Arrays/' + file,Current_Array)
     
@@ -110,7 +130,7 @@ def _Mtoggle(m_q_enabler):
 
 
 def updateplot(q,q_fps):
-    global DataToPlot
+    global DataToPlot, maxScale
 
     try:       
         
@@ -136,9 +156,30 @@ def updateplot(q,q_fps):
      
         root.after(1,updateplot,q,q_fps)
 
+def M_updateplot(m_q,m_q_fps):
+    try:
+
+        Q = m_q.get_nowait()
+        M_Image = Q[0]
+        M_timestamp =  Q[1]
+
+        # time.sleep(1)
+        # M_timestamp = m_q_fps.get_nowait()
+
+        root.after(1,M_mode_plot,M_Image,M_timestamp,M_timestamp)
+
+        # M_mode_plot(M_Image,M_timestamp,M_timestamp)
+
+        root.after(10,M_updateplot,m_q,m_q_fps)
+       
+    except:
+        root.after(1,M_updateplot,m_q,m_q_fps)
+   
+
 
 
 def M_mode_plot(agg,boy,timestampArr):
+    print('Plotting M mode')
     
     result = np.array(agg)
     timeStamp = np.array(timestampArr)
@@ -149,40 +190,46 @@ def M_mode_plot(agg,boy,timestampArr):
     # print(Mimage.shape)
     Mimage = Mimage.reshape((1024,-1))
     # print(Mimage.shape)
-    print(len(boy))
-    plt.close()
+    # print(len(boy))
 
+   
+    plt.close()
     plt.figure()
-    print('average fps: ' + str(sum(boy)/len(boy)))
+    
     Image = plt.imshow(Mimage,cmap='gray',interpolation='nearest', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto',animated=False)
     
-    Image.set_clim(vmin=0, vmax=200)  # Has to be passed from inside the other process
-    
-    
-    plt.axis('off')
+    Image.set_clim(vmin=0, vmax=maxScale)  # Has to be passed from inside the other process
+
     file =  'M_' + str(time.ctime()).replace(" ", "_").replace(":", "")
-    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 1000)
+    # saving image really slow stuff
+    # plt.axis('off')
+    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
     plt.axis('on')
 
-    print(timeStamp.shape,Mimage.shape)
+ 
 
     np.save('Arrays/' + file,Mimage)
     np.save('Arrays/' + 'T'+ file,timeStamp)
 
-    plt.show()
+    
 
     fps = []
     for i in range(0,1000-1):
         fps.append(1/(timeStamp[i+1] - timeStamp [i]))
 
-
-
-    fig, axs = plt.subplots(3)
-    fig.suptitle('Vertically stacked subplots')
-    axs[0].plot(boy)
-    axs[1].plot(timeStamp)
-    axs[2].plot(fps)
-    plt.show()
-
+    print('average fps: ' + str(sum(fps)/len(fps)))
     print("Done")
 
+    figf, axsf = plt.subplots(3)
+    figf.suptitle('Vertically stacked subplots')
+    axsf[0].plot(boy)
+    axsf[1].plot(timeStamp)
+    axsf[2].plot(fps)
+    
+  
+
+    plt.show()
+
+    return
+
+  

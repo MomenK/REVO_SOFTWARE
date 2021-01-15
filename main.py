@@ -1,5 +1,5 @@
 from REVO.Rserial import RSerial
-from REVO.AppView import plot, M_mode_plot
+from REVO.AppView import plot
 import settings
 
 import multiprocessing
@@ -27,7 +27,7 @@ def BModeTask(port,q,q_enabler,q_fps):
             
 
 
-def MModeTask(port,m_q,m_q_enabler):
+def MModeTask(port,m_q,m_q_enabler,m_q_fps):
     ser = RSerial(port,8*1000000,2048*2,2)  # 16 bits mode
     # ser = RSerial('COM4',8*1000000,2048*1,2)   # 8 bits mode
     enabler = False
@@ -58,8 +58,13 @@ def MModeTask(port,m_q,m_q_enabler):
 
                 if counter == 1000:
                     print("Processing M_mode Image: "+time.ctime())
+                    Q = [ agg, timestampArr ]
+          
+                    m_q.put(Q)
+                    # time.sleep(1)
+                    # m_q_fps.put(timestampArr)
                     enabler = False
-                    M_mode_plot(agg,fpsArr[1:],timestampArr)
+                    # M_mode_plot(agg,fpsArr[1:],timestampArr)
                     counter = 0
                     agg = []
                     fpsArr = []
@@ -82,14 +87,15 @@ if __name__ == '__main__':
 
     m_q = multiprocessing.Queue()
     m_q_enabler = multiprocessing.Queue()
+    m_q_fps = multiprocessing.Queue()
    
-    BModeInstance=multiprocessing.Process(None,BModeTask,args=(settings.BModePort,q,q_enabler,q_fps))
-    MModeInstance=multiprocessing.Process(None,MModeTask,args=(settings.MModePort,m_q,m_q_enabler))
+    BModeInstance=multiprocessing.Process(None,BModeTask,args=(settings.BModePort,q  ,q_enabler  ,q_fps  ))
+    MModeInstance=multiprocessing.Process(None,MModeTask,args=(settings.MModePort,m_q,m_q_enabler,m_q_fps))
 
     BModeInstance.start()
     MModeInstance.start()
    
-    plot(q,q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance)
+    plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance)
     
     BModeInstance.join()
     MModeInstance.join()
