@@ -195,9 +195,12 @@ def M_mode_plot(agg,boy,timestampArr):
    
     plt.close()
     plt.figure()
-    
-    Image = plt.imshow(Mimage,cmap='gray',interpolation='nearest', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto',animated=False)
-    
+    # THIS IS BAD AND INTRODUCES BLACK LINES FOR SOME REASON
+    # Image = plt.imshow(Mimage,cmap='gray',interpolation='None', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto',animated=False)
+    # Image = plt.imshow(Mimage,cmap='gray',aspect= 4)
+    # This is the fix for some reason! interpolation=None works. interpolation='None' does not!
+    Image = plt.imshow(Mimage,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+
     Image.set_clim(vmin=0, vmax=maxScale)  # Has to be passed from inside the other process
 
     file =  'M_' + str(time.ctime()).replace(" ", "_").replace(":", "")

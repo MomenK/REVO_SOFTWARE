@@ -13,22 +13,25 @@ class RUSBfifo(Device):
         super().flush()
 
     def fetch(self):
-
-       super().write(bytearray([240]))
+    #    super().flush()
+        # time.sleep(0.001)
+        super().write(bytearray([240]))
        
-       # time.sleep(0.001)
+        time.sleep(0.001)
+       
 
-       data = bytearray(super().read(self.buff_size))
+        data = bytearray(super().read(self.buff_size))
+        super().flush()
 
-       if len(data) != self.buff_size: 
-            raise ValueError('Connection issue we got '+ str(len(data)) + ' Instead of ' + str(self.buff_size))
+        if len(data) != self.buff_size: 
+                raise ValueError('Connection issue we got '+ str(len(data)) + ' Instead of ' + str(self.buff_size))
+            
+        data1 = np.frombuffer(data, dtype=np.int16, count=-1).reshape(self.Channels,-1)
+        data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
+
         
-       data1 = np.frombuffer(data, dtype=np.int16, count=-1).reshape(self.Channels,-1)
-       data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
 
-       super().flush()
-
-       return data2
+        return data2
 
 
 # USE CASE:
