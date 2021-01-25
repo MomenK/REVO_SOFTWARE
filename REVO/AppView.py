@@ -9,17 +9,11 @@ import numpy as np
 import time
 
 
+import settings
 
-class settings:
-    def __init__(self):
-        self.modeVar = True
-        self.stopper = True
-        self.Mstopper = False
-
-settings = settings()
 
 def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
-    global canvas, toolbar, image, button_stop, label, root, var, fig, image, ax
+    global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, fig, image, ax
     
     root = tkinter.Tk()
     root.wm_title("REVO IMAGING TOOL")  
@@ -29,10 +23,17 @@ def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     scale = tkinter.Scale( root, variable = var, orient=tkinter.HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Dynamic range' )
     scale.pack(anchor=tkinter.CENTER)
 
-    fig = plt.figure(figsize=(2,4), dpi=180)
+    fig = plt.figure()
     ax = fig.gca()
     img =  np.zeros((1024,32))
-    image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
+
+    if settings.DebugMode == 1:
+        image = plt.imshow(img, cmap='gray', aspect=0.1)
+    else:
+        image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
+        plt.xlabel('Width (mm)')
+        plt.ylabel('Depth (mm)')
+    
 
     canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
     canvas.draw()
@@ -41,7 +42,7 @@ def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     toolbar = NavigationToolbar2Tk(canvas, root)
     toolbar.update()
     canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-    # canvas.mpl_connect("key_press_event", on_key_press)
+
 
 
     prompt = 'fps'
@@ -66,9 +67,6 @@ def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     M_updateplot(m_q, m_q_fps)
     root.mainloop()
 
-# def on_key_press(event):
-#     print("you pressed {}".format(event.key))
-#     key_press_handler(event, canvas, toolbar)
 
 
 def _quitAll(process,M_process, top):
@@ -81,22 +79,6 @@ def _quitAll(process,M_process, top):
 
 def _mode():
     settings.modeVar = not settings.modeVar
-    # plt.close()
-
-    # plt.figure(1)
-    # Image = plt.imshow(DataToPlot,cmap='gray',interpolation='nearest', aspect='auto',animated=False)
-    
-    # Image.set_clim(vmin=0, vmax=200)
-    # # plt.show(block=False)
-
-    # # plt.close()
-    # plt.figure(2)
-    # Image = plt.imshow(DataToPlot,cmap='gray',interpolation='nearest', aspect='auto',animated=False)
-    
-    # Image.set_clim(vmin=0, vmax=1)
-    # # plt.show(block=False)
-
-    # plt.show()
 
 
 
@@ -109,6 +91,7 @@ def _save():
     ax.axis('on')
 
     np.save('Arrays/' + file,Current_Array)
+    np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
     
     
 
@@ -125,6 +108,8 @@ def _Mtoggle(m_q_enabler):
     # settings.Mstopper = not settings.Mstopper
     
     m_q_enabler.put(True)
+    # button_M_stop.config(text= 'Stop')
+    button_M_stop["state"] = "disabled"
     # print(settings.Mstopper)
     # button_M_stop.config(text= 'Stop' if settings.Mstopper else 'Start')
 
@@ -135,17 +120,25 @@ def updateplot(q,q_fps):
     try:       
         
         result=q.get_nowait()
+        if settings.DebugMode == 1:
+            DataToPlot = result
+            image.set_data(DataToPlot)
+            image.set_clim(vmin=-1000, vmax=1000)
+
+
+        else:
     
-        result_log = np.log10(result)  # Chaning log is add a sacling factor!
-        DataToPlot =  result if settings.modeVar else result_log
-        # DataToPlot =  result 
-        # maxScale =  var.get()/100 * 4096 if settings.modeVar else var.get()/100 * DataToPlot.max()
-        maxScale =  var.get()/100 * DataToPlot.max()
+            result_log = np.log10(result)  # Chaning log is add a sacling factor!
+            DataToPlot =  result if settings.modeVar else result_log
+            # DataToPlot =  result 
+            # maxScale =  var.get()/100 * 4096 if settings.modeVar else var.get()/100 * DataToPlot.max()
+            # maxScale =  var.get()/100 * DataToPlot.max()
         
-        image.set_data(DataToPlot)
-        # print(maxScale)
-        image.set_clim(vmin=0, vmax=maxScale)
-        # DataToPlot.min()
+            image.set_data(DataToPlot)
+            # print(maxScale)
+            image.set_clim(vmin=0, vmax=var.get()/100 * 4096)
+
+        
 
         canvas.draw()
         text = q_fps.get_nowait()
@@ -189,7 +182,7 @@ def M_mode_plot(agg,boy,timestampArr):
     Mimage = Mimage.transpose(1,0,2)
     # print(Mimage.shape)
     Mimage = Mimage.reshape((1024,-1))
-    # print(Mimage.shape)
+    print(Mimage.shape)
     # print(len(boy))
 
    
@@ -199,9 +192,25 @@ def M_mode_plot(agg,boy,timestampArr):
     # Image = plt.imshow(Mimage,cmap='gray',interpolation='None', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto',animated=False)
     # Image = plt.imshow(Mimage,cmap='gray',aspect= 4)
     # This is the fix for some reason! interpolation=None works. interpolation='None' does not!
-    Image = plt.imshow(Mimage,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+    Img =  np.zeros((1024,2000))
+    if settings.DebugMode == 1:
+        Image = plt.imshow(Img, cmap='gray', aspect=1)
+        Image.set_data(Mimage)
+        Image.set_clim(vmin=-1000, vmax=1000)
+        np.savetxt("foo.csv", Mimage, delimiter=",",fmt='%5.1f')
 
-    Image.set_clim(vmin=0, vmax=maxScale)  # Has to be passed from inside the other process
+
+    else:
+        Image = plt.imshow(Mimage,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+        Image.set_data(Mimage)
+        Image.set_clim(vmin=0, vmax=var.get()/100 * 4096)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Depth (mm)')
+    
+ 
+    
+
+    #   # Has to be passed from inside the other process
 
     file =  'M_' + str(time.ctime()).replace(" ", "_").replace(":", "")
     # saving image really slow stuff
@@ -229,10 +238,23 @@ def M_mode_plot(agg,boy,timestampArr):
     axsf[1].plot(timeStamp)
     axsf[2].plot(fps)
     
-  
+    button_M_stop["state"] = "normal"
 
+   
+
+    failed = []
+
+    for i in range(0,2000-1):
+        if np.all(Mimage[1:,i] == Mimage[1:,i+1]) :
+            pass
+        else:
+            # print(i)
+            
+            failed.append(i)
+
+    print(failed)
+    print(len(failed))
     plt.show()
-
     return
 
   

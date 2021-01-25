@@ -35,7 +35,7 @@ ser.write(bytearray(b'\x00\x04')) # set mode to beamforming
 write_spi(ser, '2000000')
 
 # Write data
-write_spi(ser, '2020000') #  2020380 for SYNC
+write_spi(ser, '2020380') #  2020380 for SYNC
 
 # Read Mode 
 write_spi(ser, '2000002')

@@ -1,7 +1,12 @@
 from sys import platform
 
 def init():
-    global BModePort, MModePort
+    global BModePort, MModePort, modeVar, stopper, Mstopper, DebugMode
+    modeVar = True
+    stopper = True
+    Mstopper = False
+    DebugMode =     1
+
     if platform == "win32":
         print("win32")
 
