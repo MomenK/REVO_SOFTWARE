@@ -40,7 +40,7 @@ address_counter = 0
 
 for l in lines:
     # print(get_bin(address_counter,8),l)
-    send_data(ser,1,address_counter,int(l,2))
+    send_data(ser,31,address_counter,int(l,2))
     address_counter = address_counter +1
 
 f.close()

@@ -32,7 +32,7 @@ def send_data(port, channel, delay):
 
 print(data_package(4,0))
 
-delayV = 0
+delayV = 10
 
 
 ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial port

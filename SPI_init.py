@@ -37,6 +37,5 @@ for line in lines:
 
     write_spi(ser, command)
     if command == '2000002':
-        time.sleep(1)
-
+        time.sleep(10)
 

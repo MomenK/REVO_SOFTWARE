@@ -91,7 +91,32 @@ def _save():
     ax.axis('on')
 
     np.save('Arrays/' + file,Current_Array)
-    np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
+
+    if settings.DebugMode == 1:
+        print(Current_Array.shape)
+
+        np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
+
+        failed = []
+
+        for i in range(0,31-2):
+            if np.all(Current_Array[1:,i] == Current_Array[1:,i+2]) :
+                pass
+            else:
+                print(i)
+                x = Current_Array[1:,i] == Current_Array[1:,i+2]
+                # print(x)
+                print(np.where( x == False))
+                failed.append(i)
+        print("Sample of interest is!" + str(Current_Array[20,0]))
+        if (Current_Array[20,0] % 2) == 0:
+            print("Even!")
+        else:
+            print("Odd!")
+
+
+        print(failed)
+        print(len(failed))
     
     
 
@@ -124,6 +149,32 @@ def updateplot(q,q_fps):
             DataToPlot = result
             image.set_data(DataToPlot)
             image.set_clim(vmin=-1000, vmax=1000)
+
+            failed = []
+
+            for i in range(0,31-2):
+                if np.all(DataToPlot[3:,i] == DataToPlot[3:,i+2]) :
+                    pass
+                else:
+                    print(i)
+                    x = DataToPlot[3:,i] == DataToPlot[3:,i+2]
+                    # print(x)
+                    print(np.where( x == False))
+                    failed.append(i)
+
+          
+            
+            if (DataToPlot[20,0] % 2) == 0:
+                print("Even!")
+            # else:
+            #     print("Odd!")
+
+            if not (DataToPlot[20,0]   == 47): 
+                print("Sample of interest is!" + str(DataToPlot[20,0]))
+
+            if len(failed) > 0:
+                print(failed)
+                print(len(failed))
 
 
         else:
@@ -171,6 +222,9 @@ def M_updateplot(m_q,m_q_fps):
 
 
 
+
+
+
 def M_mode_plot(agg,boy,timestampArr):
     print('Plotting M mode')
     
@@ -198,6 +252,22 @@ def M_mode_plot(agg,boy,timestampArr):
         Image.set_data(Mimage)
         Image.set_clim(vmin=-1000, vmax=1000)
         np.savetxt("foo.csv", Mimage, delimiter=",",fmt='%5.1f')
+
+        failed = []
+
+        for i in range(0,2000-1):
+            if np.all(Mimage[10:,i] == Mimage[10:,i+1]) :
+                pass
+            else:
+                print(i)
+                x = Mimage[10:,i] == Mimage[10:,i+1]
+                print(np.where( x == False))
+                failed.append(i)
+                
+
+        print(failed)
+        print(len(failed))
+       
 
 
     else:
@@ -240,21 +310,10 @@ def M_mode_plot(agg,boy,timestampArr):
     
     button_M_stop["state"] = "normal"
 
-   
-
-    failed = []
-
-    for i in range(0,2000-1):
-        if np.all(Mimage[1:,i] == Mimage[1:,i+1]) :
-            pass
-        else:
-            # print(i)
-            
-            failed.append(i)
-
-    print(failed)
-    print(len(failed))
     plt.show()
+
+
     return
+
 
   
