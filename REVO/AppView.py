@@ -15,18 +15,19 @@ import settings
 def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, fig, image, ax
     
+    # Create root object
     root = tkinter.Tk()
     root.wm_title("REVO IMAGING TOOL")  
     root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(BModeInstance,MModeInstance,root))
 
+    # Create scale/ Dynamic range
     var = tkinter.DoubleVar()
     scale = tkinter.Scale( root, variable = var, orient=tkinter.HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Dynamic range' )
-    scale.pack(anchor=tkinter.CENTER)
-
+    
+    # Create Figure 
     fig = plt.figure()
     ax = fig.gca()
     img =  np.zeros((1024,32))
-
     if settings.DebugMode == 1:
         image = plt.imshow(img, cmap='gray', aspect=0.1)
     else:
@@ -34,35 +35,35 @@ def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
         plt.xlabel('Width (mm)')
         plt.ylabel('Depth (mm)')
     
-
     canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
     canvas.draw()
-    canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=1)
-
+    # canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=1)
     toolbar = NavigationToolbar2Tk(canvas, root)
     toolbar.update()
-    canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+    
 
-
-
+    # FPS label 
     prompt = 'fps'
     label = tkinter.Label(master= root, text=prompt, width=len(prompt))
-    label.pack(side=tkinter.TOP)
-
+    
+    #  Buttons
     button_M_stop =tkinter.Button(master=root, text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
     button_quit = tkinter.Button(master=root, text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
     button_stop =tkinter.Button(master=root, text="Stop", command=lambda:_toggle(q_enabler))
     button_Mode = tkinter.Button(master=root, text="Mode", command=_mode)
     button_Save = tkinter.Button(master=root, text="Save", command=_save)
 
+    #  Pack
+    canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+    scale.pack(anchor=tkinter.CENTER)
+    label.pack(side=tkinter.TOP)
     button_quit.pack(side=tkinter.LEFT)
     button_stop.pack(side=tkinter.LEFT)
     button_Mode.pack(side=tkinter.LEFT)
     button_Save.pack(side=tkinter.LEFT)
     button_M_stop.pack(side=tkinter.RIGHT)
 
-  
-
+    # Start App task
     updateplot(q,   q_fps)
     M_updateplot(m_q, m_q_fps)
     root.mainloop()
@@ -170,7 +171,8 @@ def updateplot(q,q_fps):
             #     print("Odd!")
 
             if not (DataToPlot[20,0]   == 47): 
-                print("Sample of interest is!" + str(DataToPlot[20,0]))
+                print("Sample of interest is :" + str(DataToPlot[20,:]))
+                assert True, "DOGSHITE"
 
             if len(failed) > 0:
                 print(failed)
