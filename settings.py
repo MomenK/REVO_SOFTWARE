@@ -5,7 +5,7 @@ def init():
     modeVar = True
     stopper = True
     Mstopper = False
-    DebugMode =     1
+    DebugMode =     0
 
     if platform == "win32":
         print("win32")

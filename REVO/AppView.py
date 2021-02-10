@@ -20,9 +20,9 @@ def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
     root.wm_title("REVO IMAGING TOOL")  
     root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(BModeInstance,MModeInstance,root))
 
-    # Create scale/ Dynamic range
+    # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
     var = tkinter.DoubleVar()
-    scale = tkinter.Scale( root, variable = var, orient=tkinter.HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Dynamic range' )
+    scale = tkinter.Scale( root, variable = var, orient=tkinter.HORIZONTAL,from_=1, to=75, resolution=0.5, length=300, label='Dynamic range (dB)' ) 
     
     # Create Figure 
     fig = plt.figure()
@@ -181,15 +181,18 @@ def updateplot(q,q_fps):
 
         else:
     
-            result_log = np.log10(result)  # Chaning log is add a sacling factor!
-            DataToPlot =  result if settings.modeVar else result_log
-            # DataToPlot =  result 
+            # result_log = np.log10(result)  # Chaning log is add a sacling factor!
+      
+            # DataToPlot =  result if settings.modeVar else result_log
+            DataToPlot =  result 
             # maxScale =  var.get()/100 * 4096 if settings.modeVar else var.get()/100 * DataToPlot.max()
             # maxScale =  var.get()/100 * DataToPlot.max()
         
             image.set_data(DataToPlot)
             # print(maxScale)
-            image.set_clim(vmin=0, vmax=var.get()/100 * 4096)
+            # image.set_clim(vmin=0, vmax=var.get()/100 * 5000)
+            image.set_clim(vmin=0, vmax= 10**(var.get()/20))
+            print(DataToPlot.max(), np.mean(DataToPlot))
 
         
 

@@ -46,3 +46,48 @@ write_spi(ser, '2000002')
 # read data
 write_spi(ser, '2020000')
 
+
+# Try changing gain values 
+write_spi(ser, '2000000')
+
+write_spi(ser, '2000010')
+
+write_spi(ser, '1000010')
+
+# 20dB
+write_spi(ser, '1B50050')
+
+write_spi(ser, '2B50050')
+
+# 906 ... 607
+# write_spi(ser, '1B5013F')
+
+# write_spi(ser, '2B5013F')
+
+
+# 490 -- 325
+# write_spi(ser, '1B50100')
+
+# write_spi(ser, '2B50100')
+
+# 267 -- 193
+# write_spi(ser, '1B500C0')
+
+# write_spi(ser, '2B500C0')
+
+# 123
+# write_spi(ser, '1B5003F')
+
+# write_spi(ser, '2B5003F')
+
+# 108
+# write_spi(ser, '1B50000')
+
+# write_spi(ser, '2B50000')
+
+
+
+write_spi(ser, '1B68000')
+
+write_spi(ser, '2B68000')
+

@@ -36,11 +36,13 @@ ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
 ser.write(bytearray(b'\x00\x02')) # set mode to Pulseforming
 
 
-address_counter = 0
 
-for l in lines:
-    # print(get_bin(address_counter,8),l)
-    send_data(ser,31,address_counter,int(l,2))
-    address_counter = address_counter +1
+
+for J in range(0,31):
+    address_counter = 0
+    for l in lines:
+        # print(get_bin(address_counter,8),l)
+        send_data(ser,J,address_counter,int(l,2))
+        address_counter = address_counter +1
 
 f.close()
