@@ -1,4 +1,4 @@
-import tkinter
+from tkinter import * 
 
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -13,19 +13,31 @@ import settings
 
 
 def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
-    global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, fig, image, ax
+    global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, var1, fig, image, ax
     
     # Create root object
-    root = tkinter.Tk()
+    root = Tk()
     root.wm_title("REVO IMAGING TOOL")  
     root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(BModeInstance,MModeInstance,root))
+    root.maxsize(1200, 900) # width x height
+    root.config(bg="whitesmoke")
 
-    # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
-    var = tkinter.DoubleVar()
-    scale = tkinter.Scale( root, variable = var, orient=tkinter.HORIZONTAL,from_=1, to=75, resolution=0.5, length=300, label='Dynamic range (dB)' ) 
+    # Create left and right frames
+
     
+    right_frame = Frame(root, width=600, height=400,bg='whitesmoke') 
+    right_frame.grid(row=0, column=1, padx=10, pady=5, sticky='NW')
+
+    left_frame = Frame(root, width=200, height= 400, bg='steelblue')
+    left_frame.grid(row=0, column=0, padx=10, pady=5, sticky='NWSE')
+
+    # tool_bar = Frame(left_frame, width=180, height=185, bg='gray')
+    # tool_bar.grid(row=7, column=0, padx=5, pady=5)
+
+
+
     # Create Figure 
-    fig = plt.figure()
+    fig = plt.figure(figsize =(8,8), facecolor = 'whitesmoke' )#   
     ax = fig.gca()
     img =  np.zeros((1024,32))
     if settings.DebugMode == 1:
@@ -35,33 +47,49 @@ def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
         plt.xlabel('Width (mm)')
         plt.ylabel('Depth (mm)')
     
-    canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+    canvas = FigureCanvasTkAgg(fig, master=right_frame)  # A tk.DrawingArea.
     canvas.draw()
     # canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=1)
-    toolbar = NavigationToolbar2Tk(canvas, root)
-    toolbar.update()
+    # toolbar = NavigationToolbar2Tk(canvas, right_frame)
+    # toolbar.update()
     
 
+    
+    # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
+    var = DoubleVar()
+    scale = Scale( left_frame, variable = var, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Dynamic range (dB)' ) 
+    scale.set(70)
+    var1 = DoubleVar()
+    scale1 = Scale( left_frame, variable = var1, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Reject(dB)' ) 
+    scale1.set(0)
     # FPS label 
     prompt = 'fps'
-    label = tkinter.Label(master= root, text=prompt, width=len(prompt))
+    label = Label(master= right_frame,bg='whitesmoke', text=prompt, width=len(prompt))
     
     #  Buttons
-    button_M_stop =tkinter.Button(master=root, text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
-    button_quit = tkinter.Button(master=root, text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
-    button_stop =tkinter.Button(master=root, text="Stop", command=lambda:_toggle(q_enabler))
-    button_Mode = tkinter.Button(master=root, text="Mode", command=_mode)
-    button_Save = tkinter.Button(master=root, text="Save", command=_save)
+    button_M_stop= Button(master=left_frame,bg='snow', text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
+    button_quit = Button(master=left_frame,bg='snow', text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
+    button_stop = Button(master=left_frame,bg='snow', text="Stop", command=lambda:_toggle(q_enabler))
+    button_Mode = Button(master=left_frame,bg='snow', text="Mode", command=_mode)
+    button_Save = Button(master=left_frame,bg='snow', text="Save", command=_save)
 
     #  Pack
-    canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-    scale.pack(anchor=tkinter.CENTER)
-    label.pack(side=tkinter.TOP)
-    button_quit.pack(side=tkinter.LEFT)
-    button_stop.pack(side=tkinter.LEFT)
-    button_Mode.pack(side=tkinter.LEFT)
-    button_Save.pack(side=tkinter.LEFT)
-    button_M_stop.pack(side=tkinter.RIGHT)
+    canvas.get_tk_widget().grid(row=1, column=0, padx=5, pady=5, sticky='n')
+    label.grid(row=2, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+
+
+    
+    
+    button_stop.grid(row=0, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_Mode.grid(row=0, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_Save.grid(row=0, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    
+    button_M_stop.grid(row=0, column=3, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+
+    # button_quit.grid(row=1, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+
+    scale.grid(row=3, column=0,columnspan=4 , padx=5, pady=5, sticky='n')
+    scale1.grid(row=4, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
 
     # Start App task
     updateplot(q,   q_fps)
@@ -180,18 +208,19 @@ def updateplot(q,q_fps):
 
 
         else:
-    
-            # result_log = np.log10(result)  # Chaning log is add a sacling factor!
-      
-            # DataToPlot =  result if settings.modeVar else result_log
-            DataToPlot =  result 
-            # maxScale =  var.get()/100 * 4096 if settings.modeVar else var.get()/100 * DataToPlot.max()
-            # maxScale =  var.get()/100 * DataToPlot.max()
-        
+            if settings.modeVar:
+                DataToPlot = 20*np.log10(result)
+                image.set_clim(vmin=var1.get(), vmax= var.get())
+
+            else:
+                DataToPlot =  result
+                image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
+
             image.set_data(DataToPlot)
-            # print(maxScale)
-            # image.set_clim(vmin=0, vmax=var.get()/100 * 5000)
-            image.set_clim(vmin=0, vmax= 10**(var.get()/20))
+    
+
+            
+            
             print(DataToPlot.max(), np.mean(DataToPlot))
 
         

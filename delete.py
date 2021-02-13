@@ -1,9 +1,330 @@
+import tkinter
+
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backend_bases import key_press_handler
+import matplotlib.pyplot as plt
+
+import numpy as np
+import time
+
+
 import settings
 
-settings.init()
 
-print(settings.BModePort)
+def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
+    global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, var1, fig, image, ax
+    
+    # Create root object
+    root = tkinter.Tk()
+    root.wm_title("REVO IMAGING TOOL")  
+    root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(BModeInstance,MModeInstance,root))
+    root.maxsize(900, 600) # width x height
+    root.config(bg="skyblue")
 
-# from settings import Rsetting
+    # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
+    var = tkinter.DoubleVar()
+    scale = tkinter.Scale( root, variable = var, orient=tkinter.HORIZONTAL,from_=1, to=75, resolution=0.5, length=300, label='Dynamic range_H (dB)' ) 
 
-# settings = Rsetting()
+    var1 = tkinter.DoubleVar()
+    scale1 = tkinter.Scale( root, variable = var1, orient=tkinter.HORIZONTAL,from_=1, to=75, resolution=0.5, length=300, label='Dynamic range_L(dB)' ) 
+    # Create Figure 
+    fig = plt.figure()
+    ax = fig.gca()
+    img =  np.zeros((1024,32))
+    if settings.DebugMode == 1:
+        image = plt.imshow(img, cmap='gray', aspect=0.1)
+    else:
+        image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
+        plt.xlabel('Width (mm)')
+        plt.ylabel('Depth (mm)')
+    
+    canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+    canvas.draw()
+    # canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=1)
+    toolbar = NavigationToolbar2Tk(canvas, root)
+    toolbar.update()
+    
+
+    # FPS label 
+    prompt = 'fps'
+    label = tkinter.Label(master= root, text=prompt, width=len(prompt))
+    
+    #  Buttons
+    button_M_stop =tkinter.Button(master=root, text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
+    button_quit = tkinter.Button(master=root, text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
+    button_stop =tkinter.Button(master=root, text="Stop", command=lambda:_toggle(q_enabler))
+    button_Mode = tkinter.Button(master=root, text="Mode", command=_mode)
+    button_Save = tkinter.Button(master=root, text="Save", command=_save)
+
+    #  Pack
+    canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+    scale.pack(anchor=tkinter.CENTER)
+    scale1.pack(anchor=tkinter.CENTER)
+    label.pack(side=tkinter.TOP)
+    button_quit.pack(side=tkinter.LEFT)
+    button_stop.pack(side=tkinter.LEFT)
+    button_Mode.pack(side=tkinter.LEFT)
+    button_Save.pack(side=tkinter.LEFT)
+    button_M_stop.pack(side=tkinter.RIGHT)
+
+    # Start App task
+    updateplot(q,   q_fps)
+    M_updateplot(m_q, m_q_fps)
+    root.mainloop()
+
+
+
+def _quitAll(process,M_process, top):
+    global quitter
+    quitter = True
+    process.terminate()
+    M_process.terminate()
+    top.quit()
+    top.destroy()
+
+def _mode():
+    settings.modeVar = not settings.modeVar
+
+
+
+def _save():
+    
+    # ax.axis('off')
+    file =  'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    Current_Array = DataToPlot
+    fig.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    ax.axis('on')
+
+    np.save('Arrays/' + file,Current_Array)
+
+    if settings.DebugMode == 1:
+        print(Current_Array.shape)
+
+        np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
+
+        failed = []
+
+        for i in range(0,31-2):
+            if np.all(Current_Array[1:,i] == Current_Array[1:,i+2]) :
+                pass
+            else:
+                print(i)
+                x = Current_Array[1:,i] == Current_Array[1:,i+2]
+                # print(x)
+                print(np.where( x == False))
+                failed.append(i)
+        print("Sample of interest is!" + str(Current_Array[20,0]))
+        if (Current_Array[20,0] % 2) == 0:
+            print("Even!")
+        else:
+            print("Odd!")
+
+
+        print(failed)
+        print(len(failed))
+    
+    
+
+def _toggle(q_enabler):
+
+    settings.stopper = not settings.stopper
+    q_enabler.put(settings.stopper)
+    button_stop.config(text= 'Stop' if settings.stopper else 'Start')
+
+
+
+def _Mtoggle(m_q_enabler):
+    # global settings.Mstopper
+    # settings.Mstopper = not settings.Mstopper
+    
+    m_q_enabler.put(True)
+    # button_M_stop.config(text= 'Stop')
+    button_M_stop["state"] = "disabled"
+    # print(settings.Mstopper)
+    # button_M_stop.config(text= 'Stop' if settings.Mstopper else 'Start')
+
+
+def updateplot(q,q_fps):
+    global DataToPlot, maxScale
+
+    try:       
+        
+        result=q.get_nowait()
+        if settings.DebugMode == 1:
+            DataToPlot = result
+            image.set_data(DataToPlot)
+            image.set_clim(vmin=-1000, vmax=1000)
+
+            failed = []
+
+            for i in range(0,31-2):
+                if np.all(DataToPlot[3:,i] == DataToPlot[3:,i+2]) :
+                    pass
+                else:
+                    print(i)
+                    x = DataToPlot[3:,i] == DataToPlot[3:,i+2]
+                    # print(x)
+                    print(np.where( x == False))
+                    failed.append(i)
+
+          
+            
+            if (DataToPlot[20,0] % 2) == 0:
+                print("Even!")
+            # else:
+            #     print("Odd!")
+
+            if not (DataToPlot[20,0]   == 47): 
+                print("Sample of interest is :" + str(DataToPlot[20,:]))
+                assert True, "DOGSHITE"
+
+            if len(failed) > 0:
+                print(failed)
+                print(len(failed))
+
+
+        else:
+    
+            result_log = 20*np.log10(result)  # Chaning log is add a sacling factor!
+      
+            DataToPlot =  result if settings.modeVar else result_log
+            # DataToPlot =  result 
+            # maxScale =  var.get()/100 * 4096 if settings.modeVar else var.get()/100 * DataToPlot.max()
+            # maxScale =  var.get()/100 * DataToPlot.max()
+        
+            image.set_data(DataToPlot)
+            # print(maxScale)
+            # image.set_clim(vmin=0, vmax=var.get()/100 * 5000)
+            image.set_clim(vmin=0, vmax= 10**(var.get()/20))
+            image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
+            print(DataToPlot.max(), np.mean(DataToPlot))
+
+        
+
+        canvas.draw()
+        text = q_fps.get_nowait()
+        label.config(text=text, width=len(text))
+        root.after(1,updateplot,q,q_fps)
+    
+    except:
+     
+        root.after(1,updateplot,q,q_fps)
+
+def M_updateplot(m_q,m_q_fps):
+    try:
+
+        Q = m_q.get_nowait()
+        M_Image = Q[0]
+        M_timestamp =  Q[1]
+
+        # time.sleep(1)
+        # M_timestamp = m_q_fps.get_nowait()
+
+        root.after(1,M_mode_plot,M_Image,M_timestamp,M_timestamp)
+
+        # M_mode_plot(M_Image,M_timestamp,M_timestamp)
+
+        root.after(10,M_updateplot,m_q,m_q_fps)
+       
+    except:
+        root.after(1,M_updateplot,m_q,m_q_fps)
+   
+
+
+
+
+
+
+def M_mode_plot(agg,boy,timestampArr):
+    print('Plotting M mode')
+    
+    result = np.array(agg)
+    timeStamp = np.array(timestampArr)
+
+    Mimage =  result
+    # print(Mimage.shape)
+    Mimage = Mimage.transpose(1,0,2)
+    # print(Mimage.shape)
+    Mimage = Mimage.reshape((1024,-1))
+    print(Mimage.shape)
+    # print(len(boy))
+
+   
+    plt.close()
+    plt.figure()
+    # THIS IS BAD AND INTRODUCES BLACK LINES FOR SOME REASON
+    # Image = plt.imshow(Mimage,cmap='gray',interpolation='None', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto',animated=False)
+    # Image = plt.imshow(Mimage,cmap='gray',aspect= 4)
+    # This is the fix for some reason! interpolation=None works. interpolation='None' does not!
+    Img =  np.zeros((1024,2000))
+    if settings.DebugMode == 1:
+        Image = plt.imshow(Img, cmap='gray', aspect=1)
+        Image.set_data(Mimage)
+        Image.set_clim(vmin=-1000, vmax=1000)
+        np.savetxt("foo.csv", Mimage, delimiter=",",fmt='%5.1f')
+
+        failed = []
+
+        for i in range(0,2000-1):
+            if np.all(Mimage[10:,i] == Mimage[10:,i+1]) :
+                pass
+            else:
+                print(i)
+                x = Mimage[10:,i] == Mimage[10:,i+1]
+                print(np.where( x == False))
+                failed.append(i)
+                
+
+        print(failed)
+        print(len(failed))
+       
+
+
+    else:
+        Image = plt.imshow(Mimage,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+        Image.set_data(Mimage)
+        Image.set_clim(vmin=0, vmax=var.get()/100 * 4096)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Depth (mm)')
+    
+ 
+    
+
+    #   # Has to be passed from inside the other process
+
+    file =  'M_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    # saving image really slow stuff
+    # plt.axis('off')
+    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    plt.axis('on')
+
+ 
+
+    np.save('Arrays/' + file,Mimage)
+    np.save('Arrays/' + 'T'+ file,timeStamp)
+
+    
+
+    fps = []
+    for i in range(0,1000-1):
+        fps.append(1/(timeStamp[i+1] - timeStamp [i]))
+
+    print('average fps: ' + str(sum(fps)/len(fps)))
+    print("Done")
+
+    figf, axsf = plt.subplots(3)
+    figf.suptitle('Vertically stacked subplots')
+    axsf[0].plot(boy)
+    axsf[1].plot(timeStamp)
+    axsf[2].plot(fps)
+    
+    button_M_stop["state"] = "normal"
+
+    plt.show()
+
+
+    return
+
+
+  

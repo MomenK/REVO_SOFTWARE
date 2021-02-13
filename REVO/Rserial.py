@@ -39,9 +39,10 @@ class RSerial(serial.Serial):
             # data2 = data2.astype('int16') 
 
         else:
-            # data2 = np.abs(hilbert(data1.T))
+            data2 = np.abs(hilbert(data1.T))
           
             data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
+            #data2 = np.abs(hilbert(data1.T-np.mean(data1[:,1000:-1],axis=1)))
         
         return data2
 
