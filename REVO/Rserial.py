@@ -33,18 +33,24 @@ class RSerial(serial.Serial):
 
         data1 = np.frombuffer(data, dtype=np.int16, count=-1).reshape(self.Channels,-1)
 
-        if self.Debug == 1:
-            # data2 = (data1.T-np.mean(data1,axis=1))
-            data2 = (data1.T)
-            # data2 = data2.astype('int16') 
+        return data1
 
-        else:
-            data2 = np.abs(hilbert(data1.T))
+        # if self.Debug == 1:
+        #     data2 = (data1.T)
+
+
+        # else:
+        #     data2 = np.abs(hilbert(data1.T))
           
-            data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
-            #data2 = np.abs(hilbert(data1.T-np.mean(data1[:,1000:-1],axis=1)))
+        #     data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
+        #     #data2 = np.abs(hilbert(data1.T-np.mean(data1[:,1000:-1],axis=1)))
+
+        #     data2 = (data1.T)
         
-        return data2
+        # return data2
+    
+    def envelope(self,data1):
+        return np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
 
     def fetch8(self):
         super().flushInput()

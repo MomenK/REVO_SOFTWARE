@@ -1,4 +1,7 @@
 from tkinter import * 
+from tkinter import ttk
+
+from scipy.signal import hilbert, chirp
 
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -13,83 +16,96 @@ import settings
 
 
 def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
-    global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, var1, fig, image, ax
+    global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, var1, fig, image, ax, Hist, fig1
     
     # Create root object
     root = Tk()
     root.wm_title("REVO IMAGING TOOL")  
     root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(BModeInstance,MModeInstance,root))
     root.maxsize(1200, 900) # width x height
-    root.config(bg="whitesmoke")
+    root.config(bg="white")
 
     # Create left and right frames
 
     
-    right_frame = Frame(root, width=600, height=400,bg='whitesmoke') 
+    right_frame = Frame(root, width=600, height=400,bg='white') 
     right_frame.grid(row=0, column=1, padx=10, pady=5, sticky='NW')
 
-    left_frame = Frame(root, width=200, height= 400, bg='steelblue')
+    left_frame = Frame(root, width=200, height= 400, bg='whitesmoke')
     left_frame.grid(row=0, column=0, padx=10, pady=5, sticky='NWSE')
 
-    # tool_bar = Frame(left_frame, width=180, height=185, bg='gray')
-    # tool_bar.grid(row=7, column=0, padx=5, pady=5)
+    Hist_window = Frame(left_frame, width=200, height=200, bg='whitesmoke')
+    Hist_window.grid(row=10, column=0,columnspan=4 , padx=5, pady=5, sticky='NWSE')
 
 
 
     # Create Figure 
-    fig = plt.figure(figsize =(8,8), facecolor = 'whitesmoke' )#   
-    ax = fig.gca()
+    fig = plt.figure(figsize =(8,8), facecolor = 'white' )#   
+    # ax = fig.gca()
     img =  np.zeros((1024,32))
     if settings.DebugMode == 1:
         image = plt.imshow(img, cmap='gray', aspect=0.1)
     else:
-        image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
+        image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False, \
+             extent=[0, 31* settings.Pitch, settings.end_y* settings.C , settings.start_y* settings.C ], aspect=1)
+
         plt.xlabel('Width (mm)')
         plt.ylabel('Depth (mm)')
     
     canvas = FigureCanvasTkAgg(fig, master=right_frame)  # A tk.DrawingArea.
     canvas.draw()
+
     # canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=1)
     # toolbar = NavigationToolbar2Tk(canvas, right_frame)
     # toolbar.update()
     
-
+    fig1 = plt.figure(figsize =(4,4), facecolor = 'whitesmoke' )# 
+    Hist = FigureCanvasTkAgg(fig1, master=Hist_window)  # A tk.DrawingArea.
+    Hist.draw()
+    
+    # plt.xlabel('Width (mm)')
+    # plt.ylabel('Depth (mm)')
     
     # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
     var = DoubleVar()
     scale = Scale( left_frame, variable = var, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Dynamic range (dB)' ) 
     scale.set(70)
+
     var1 = DoubleVar()
     scale1 = Scale( left_frame, variable = var1, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Reject(dB)' ) 
     scale1.set(0)
+
+    gain = DoubleVar()
+    scale_gain = Scale( left_frame, variable = gain, orient=HORIZONTAL,from_=12, to=51, resolution=0.5, length=300, label='Gain(dB)' ) 
+
+
     # FPS label 
     prompt = 'fps'
-    label = Label(master= right_frame,bg='whitesmoke', text=prompt, width=len(prompt))
+    label = Label(master= right_frame,bg='white', text=prompt, width=len(prompt))
     
     #  Buttons
-    button_M_stop= Button(master=left_frame,bg='snow', text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
-    button_quit = Button(master=left_frame,bg='snow', text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
-    button_stop = Button(master=left_frame,bg='snow', text="Stop", command=lambda:_toggle(q_enabler))
-    button_Mode = Button(master=left_frame,bg='snow', text="Mode", command=_mode)
-    button_Save = Button(master=left_frame,bg='snow', text="Save", command=_save)
+    button_M_stop= Button(master=left_frame,bg='whitesmoke', text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
+    # button_quit = Button(master=left_frame,bg='snow', text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
+    button_stop = Button(master=left_frame,bg='whitesmoke', text="Stop", command=lambda:_toggle(q_enabler))
+    button_Mode = Button(master=left_frame,bg='whitesmoke', text="Mode", command=_mode)
+    button_Save = Button(master=left_frame,bg='whitesmoke', text="Save", command=_save)
 
-    #  Pack
+    #  Pack *******************************************************************
     canvas.get_tk_widget().grid(row=1, column=0, padx=5, pady=5, sticky='n')
     label.grid(row=2, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
 
-
-    
-    
     button_stop.grid(row=0, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
     button_Mode.grid(row=0, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
     button_Save.grid(row=0, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
-    
     button_M_stop.grid(row=0, column=3, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
-
     # button_quit.grid(row=1, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    ttk.Separator(left_frame,orient=HORIZONTAL).grid(row=1, column=0, columnspan=4, sticky='EW')
 
     scale.grid(row=3, column=0,columnspan=4 , padx=5, pady=5, sticky='n')
     scale1.grid(row=4, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
+    scale_gain.grid(row=5, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
+
+    Hist.get_tk_widget().grid(row=1, column=0,columnspan=4, padx=20, pady=5, sticky='W')
 
     # Start App task
     updateplot(q,   q_fps)
@@ -116,10 +132,12 @@ def _save():
     # ax.axis('off')
     file =  'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
     Current_Array = DataToPlot
+    Current_RFArray = result_RF
     fig.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
-    ax.axis('on')
+    # ax.axis('on')
 
     np.save('Arrays/' + file,Current_Array)
+    np.save('RFArrays/' + file,Current_RFArray)
 
     if settings.DebugMode == 1:
         print(Current_Array.shape)
@@ -169,11 +187,18 @@ def _Mtoggle(m_q_enabler):
 
 
 def updateplot(q,q_fps):
-    global DataToPlot, maxScale
-
+    global DataToPlot, result_RF
     try:       
         
-        result=q.get_nowait()
+        result_RF =q.get_nowait()
+
+        if settings.DebugMode == 1:
+            result_full = result_RF.T
+        else:
+            result_full = np.abs(hilbert(result_RF.T-np.mean(result_RF,axis=1)))
+            
+
+        result = result_full [settings.start_y:settings.end_y,:]
         if settings.DebugMode == 1:
             DataToPlot = result
             image.set_data(DataToPlot)
@@ -217,13 +242,13 @@ def updateplot(q,q_fps):
                 image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
 
             image.set_data(DataToPlot)
-    
-
-            
-            
             print(DataToPlot.max(), np.mean(DataToPlot))
 
         
+        # p = fig1.gca()
+        # p.clear()
+        # p.hist(DataToPlot.flatten(), 20, range= [-50, 100])
+        # Hist.draw()
 
         canvas.draw()
         text = q_fps.get_nowait()

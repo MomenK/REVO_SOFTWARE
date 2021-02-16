@@ -33,9 +33,11 @@ ser.write(bytearray(b'\x00\x04')) # set mode to beamforming
 
 # Write Mode 
 write_spi(ser, '2000000')
+write_spi(ser, '1000000')
 
 # Write data
 if settings.DebugMode == 1:
+    print('DEBUG')
     write_spi(ser, '2020380') #  2020380 for SYNC
 else:
     write_spi(ser, '2020000') #  2020380 for SYNC
@@ -51,7 +53,6 @@ write_spi(ser, '2020000')
 write_spi(ser, '2000000')
 
 write_spi(ser, '2000010')
-
 write_spi(ser, '1000010')
 
 # 20dB

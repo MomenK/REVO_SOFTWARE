@@ -17,6 +17,12 @@ def init():
 
         BModePort = "/dev/COM3"
         MModePort = "/dev/COM4"
+    
+    global start_y, end_y, C, Pitch
+    Pitch = 0.3
+    C = 1.54 * 0.5 /20
+    start_y = 50
+    end_y = 500
 
 # init()
     
