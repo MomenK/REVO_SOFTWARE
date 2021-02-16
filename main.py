@@ -2,34 +2,47 @@ from REVO.Rserial import RSerial
 from REVO.Rusbfifo import RUSBfifo
 from REVO.AppView import plot
 import settings
-
 import multiprocessing
 import time
 
-
-def BModeTask(port,q,q_enabler,q_fps,DebugMode):
-    ser = RSerial(port,8*1000000,2048*32,32,DebugMode)
-    enabler = True
+def BModeTask(port,bDateQ,bCntlQ):
+    ser = RSerial(port,8*1000000,2048*32,32)
+    enabler = True  
+    # local_gain = 0
+    # local_angle = 0
     t1 = time.perf_counter()
+    ser.write_gain(80)
+    ser.write_angle(0)
     while True:
-        if not q_enabler.empty():
-            enabler = q_enabler.get_nowait()
-        else:
-            if  enabler== True:
-                try:
-                    t0 = t1
-                    data2 = ser.fetch()
-                    q.put(data2)
-                    t1 = time.perf_counter()
-                    text = 'fps: ' + "{:.2f}".format(1/(t1-t0)) + ' Hz'
-                    q_fps.put(text)
-                except ValueError as err:
-                    print('Caught this error: ' + repr(err))
+        if not bCntlQ.empty():
+            bCntlD = bCntlQ.get_nowait()
+            enabler = bCntlD[0]
+            gain = bCntlD[1]
+            angle = bCntlD[2]
+            # if gain != local_gain: #write the gain value
+            # local_gain = gain
+            gain_hex = ser.write_gain(int(gain))
+            print(gain, gain_hex)
+            
+            # if angle != local_angle:
+            # local_angle = angle
+            ser.write_angle(int(angle))
+
+             
+
+        if  enabler:
+            try:
+                t0 = t1
+                data2 = ser.fetch()
+                t1 = time.perf_counter()
+                text = 'fps: ' + "{:.2f}".format(1/(t1-t0)) + ' Hz'
+                bDateQ.put([data2, text])
+            except ValueError as err:
+                print('Caught this error: ' + repr(err))
                 
 
-
-def MModeTask(port,m_q,m_q_enabler,m_q_fps,DebugMode):
-    ser = RSerial(port,8*1000000,2048*2,2,DebugMode)  # 16 bits mode
+def MModeTask(port,m_q,m_q_enabler,m_q_fps):
+    ser = RSerial(port,8*1000000,2048*2,2)  # 16 bits mode
     # ser = RSerial('COM4',8*1000000,2048*1,2)   # 8 bits mode
     # ser = RUSBfifo(2048*2,2)  # 16 bits mode
     enabler = False
@@ -83,21 +96,20 @@ if __name__ == '__main__':
 
     settings.init()
 
-    q = multiprocessing.Queue()
-    q_enabler = multiprocessing.Queue()
-    q_fps = multiprocessing.Queue()
+    bDateQ = multiprocessing.Queue()
+    bCntlQ = multiprocessing.Queue()
 
     m_q = multiprocessing.Queue()
     m_q_enabler = multiprocessing.Queue()
     m_q_fps = multiprocessing.Queue()
    
-    BModeInstance=multiprocessing.Process(None,BModeTask,args=(settings.BModePort,q  ,q_enabler  ,q_fps  ,settings.DebugMode))
-    MModeInstance=multiprocessing.Process(None,MModeTask,args=(settings.MModePort,m_q,m_q_enabler,m_q_fps,settings.DebugMode))
+    BModeInstance=multiprocessing.Process(None,BModeTask,args=(settings.BModePort,bDateQ,bCntlQ))
+    MModeInstance=multiprocessing.Process(None,MModeTask,args=(settings.MModePort,m_q,m_q_enabler,m_q_fps))
 
     BModeInstance.start()
     MModeInstance.start()
    
-    plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance)
+    plot(BModeInstance, bDateQ, bCntlQ ,m_q,m_q_fps,m_q_enabler,MModeInstance)
     
     BModeInstance.join()
     MModeInstance.join()

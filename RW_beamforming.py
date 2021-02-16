@@ -81,8 +81,8 @@ class PW_BF():
 
 
 
-XX = np.load('./Arrays/B_Mon_Feb_15_171322_2021.npy')
-XX = XX.T
+XX = np.load('./RFArrays/B_Tue_Feb_16_182945_2021.npy')
+# XX = XX
 XX = XX-np.mean(XX,axis=0)
 
 z = 0.1

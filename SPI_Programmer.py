@@ -4,6 +4,15 @@ import time
 import settings
 settings.init()
 
+def write_gain(port,gain):
+    gain_hex = ['00' + hex(gain).split('x')[-1]][-1][-3:]
+    write_spi(ser, '2000000')
+    write_spi(ser, '2000010')
+    write_spi(ser, '1000010')
+
+    write_spi(ser, '1B50' + gain_hex)
+    write_spi(ser, '2B50' + gain_hex)
+
 
 def write_spi (port,data):
     a =  data[0:2]
@@ -22,12 +31,11 @@ def write_spi (port,data):
 
 
 
-
 ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial port
 ser.flushInput()
 ser.flushOutput()
 ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
-ser.write(bytearray(b'\x00\x04')) # set mode to beamforming
+ser.write(bytearray(b'\x00\x04')) # set mode to SPI
 # ser.write(bytearray(b'\x00\x00')) # This is needed some
 
 
@@ -50,15 +58,15 @@ write_spi(ser, '2020000')
 
 
 # Try changing gain values 
-write_spi(ser, '2000000')
+# write_spi(ser, '2000000')
 
-write_spi(ser, '2000010')
-write_spi(ser, '1000010')
+# write_spi(ser, '2000010')
+# write_spi(ser, '1000010')
 
-# 20dB
-write_spi(ser, '1B50050')
+# # 20dB
+# write_spi(ser, '1B50050')
 
-write_spi(ser, '2B50050')
+# write_spi(ser, '2B50050')
 
 # 906 ... 607
 # write_spi(ser, '1B5013F')
@@ -88,7 +96,11 @@ write_spi(ser, '2B50050')
 
 
 
-write_spi(ser, '1B68000')
+# write_spi(ser, '1B68000')
 
-write_spi(ser, '2B68000')
+# write_spi(ser, '2B68000')
 
+
+# write_gain(ser, 0)
+
+# write_gain(ser, 319)
