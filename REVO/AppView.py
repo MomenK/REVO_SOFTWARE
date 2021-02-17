@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 import time
+import math
 
 
 import settings
@@ -41,8 +42,8 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     if settings.DebugMode == 1:
         image = plt.imshow(img, cmap='gray', aspect=0.1)
     else:
-        image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False, \
-            extent=[0, 31* settings.Pitch, settings.end_y* settings.C , settings.start_y* settings.C ], aspect=1)
+        image = plt.imshow(img, cmap='gray',interpolation='None',animated=False, \
+            extent=[0, 31* settings.Pitch, settings.end_y* settings.unit_d, settings.start_y* settings.unit_d ], aspect=1)
         plt.xlabel('Width (mm)')
         plt.ylabel('Depth (mm)')
     
@@ -66,7 +67,7 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     gain.set(80)
 
     angle = DoubleVar()
-    scale_angle = Scale( left_frame, variable = angle, orient=HORIZONTAL,from_=-20, to=20, resolution=1, length=300, label='Angle (12-51 dB)' ) 
+    scale_angle = Scale( left_frame, variable = angle, orient=HORIZONTAL,from_=-30, to=30, resolution=1, length=300, label='Angle (12-51 dB)' ) 
     angle.set(0)
     # FPS label 
     prompt = 'fps'
@@ -296,7 +297,34 @@ def _toggle(bCntlQ):
     button_stop.config(text= 'Stop' if settings.stopper else 'Start')
 
 def _Program(bCntlQ):
-    bCntlQ.put([settings.stopper, gain.get(), angle.get()])
+    # slope = round(math.tan(math.radians(angle.get())), 3)
+    # print("slope:")
+    # print(slope)
+
+    # d = slope * settings.Pitch 
+    # # d = angle.get()
+    # print("distance (mm):")
+    # print(d)
+
+    # # ONLY WORKS WITH MULTIPYING BY TWO !!!! I am going crazy
+    # n = d * settings.clock / settings.C 
+    # print("number of cycles:")
+    # print(n)
+
+  
+
+    d = settings.Pitch * round(math.sin(math.radians(angle.get())), 3)
+    # d = angle.get()
+    print("distance (mm):")
+    print(d)
+    
+    n = d * settings.clock / settings.C 
+    print("number of cycles:")
+    print(n)
+
+    
+
+    bCntlQ.put([settings.stopper, gain.get(), n])
 
 def _Mtoggle(m_q_enabler):
     # global settings.Mstopper

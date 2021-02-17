@@ -102,6 +102,9 @@ class RSerial(serial.Serial):
             for i in range(0,32):
                 self.send_data(i,delayV* (i - 31) )
 
+        # for i in range(0,32):
+        #     self.send_data(i,delayV)
+
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
         super().write(bytearray(b'\x00\x03')) # set to pulsering
 

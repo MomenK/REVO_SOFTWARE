@@ -23,18 +23,18 @@ class PW_BF():
         self.res_mm_x = Pitch/2
         self.res_mm_z = 0.01
 
-    def delay_t(self,z,x,xi):
-        d_t = z
-        d_r = ( z**2 + (x-xi)**2  )**0.5
-        t = (d_t + d_r )/self.C
-        return t
+    # def delay_t(self,z,x,xi):
+    #     d_t = z
+    #     d_r = ( z**2 + (x-xi)**2  )**0.5
+    #     t = (d_t + d_r )/self.C
+    #     return t
 
     def t_to_index(self,t):
         return t*self.sampling_rate
         # return t*self.sampling_rate # Poor method.. need to interpolate later on
 
     def delay_t(self,z,x,xi,theta):
-        d_t = z * math.sin(math.radians(theta)) + z * math.cos(math.radians(theta))
+        d_t = x * math.sin(math.radians(theta)) + z * math.cos(math.radians(theta))
         # d_t = z
         d_r = ( z**2 + (x-xi)**2  )**0.5
         t = (d_t + d_r )/self.C
@@ -43,8 +43,8 @@ class PW_BF():
     def interpol(self,x1,x2,mod):
         return (mod * (x2 - x1)) + x1
     
-    def Dyn_R(self,X ):
-        XF = interp2d(range(0,X.shape[0]), range(0,X.shape[1]), X.T, kind='cubic')
+    def Dyn_R(self,X,theta ):
+        # XF = interp2d(range(0,X.shape[0]), range(0,X.shape[1]), X.T, kind='cubic')
         Y =  np.ones((self.step_z,self.step_x))
         print(X.shape)
         print(Y.shape)
@@ -60,13 +60,13 @@ class PW_BF():
                 for e in range(0, 32):
                     # print( "\t\t" + str(e) + " " + str(e*self.Pitch))
 
-                    Dd_t = self.delay_t(k*self.res_mm_z, i*self.res_mm_x , e*self.Pitch, 0)
+                    Dd_t = self.delay_t(k*self.res_mm_z, i*self.res_mm_x , e*self.Pitch, theta)
                     Dindex = self.t_to_index(Dd_t)  # Check if index is valid
                     # print("Index: "+ str(Dindex))
                     a = k*self.res_mm_z/(2*self.F_num)
                     if Dindex < X.shape[0] and e*self.Pitch > i*self.res_mm_x - a and e*self.Pitch < i*self.res_mm_x + a :
 
-                        # Y[k,i] = Y[k,i] + X[round(Dindex),e]  # Check if within F_nu
+                        Y[k,i] = Y[k,i] + X[round(Dindex),e]  # Check if within F_nu
 
                         # Y[k,i] = Y[k,i] + self.interpol( X[math.floor(Dindex),e] , X[math.ceil(Dindex),e] , Dindex - math.floor(Dindex)  )  # Check if within F_num
 
@@ -74,32 +74,33 @@ class PW_BF():
                         # Y[k,i] = Y[k,i] + f(Dindex)  # Check if within F_num
 
             
-                        Y[k,i] = Y[k,i] + XF(round(Dindex, 2),e)  # Check if within F_num
+                        # Y[k,i] = Y[k,i] + XF(round(Dindex, 2),e)  # Check if within F_num
 
                     
         return Y
 
 
 
-XX = np.load('./RFArrays/B_Tue_Feb_16_182945_2021.npy')
+XX = np.load('./RFArrays/F10.npy')
 # XX = XX
 XX = XX-np.mean(XX,axis=0)
 
-z = 0.1
+# z = 0.1
 # Engine = PW_BF(20 ,0.3,1.54,1)
 Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 1.75)
 
-time_delay = Engine.delay_t(z ,0 ,0, 0)
+# time_delay = Engine.delay_t(z ,0 ,0, 0)
 
-index = Engine.t_to_index(time_delay)
-print(index)
+# index = Engine.t_to_index(time_delay)
+# print(index)
 
-print(Engine.interpol(0,10,0.3))
+# print(Engine.interpol(0,10,0.3))
 
-# With unfocusing
-index_u = 2*20/1.54 * z
-print(index_u)
-YY = Engine.Dyn_R(XX)
+# # With unfocusing
+# index_u = 2*20/1.54 * z
+# print(index_u)
+
+YY = Engine.Dyn_R(XX,10)
 
 # for i in range(1,32):
 #     print(i)
@@ -125,12 +126,12 @@ plt.subplot(122)
 Image = plt.imshow(20*np.log10(YY_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
 # Image.set_clim(vmin=37, vmax=62)
 
-Z = 20*np.log10(YY_en)
-s= np.std(Z.flatten())
-m = np.mean(Z.flatten())
-r = 2
-r1 = m+ r*s 
-r2 = m- r*s 
-print(m,s, r2 , r1)
+# Z = 20*np.log10(YY_en)
+# s= np.std(Z.flatten())
+# m = np.mean(Z.flatten())
+# r = 2
+# r1 = m+ r*s 
+# r2 = m- r*s 
+# print(m,s, r2 , r1)
 
 plt.show()
