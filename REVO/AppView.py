@@ -12,12 +12,20 @@ import numpy as np
 import time
 import math
 
+import os
+from pathlib import Path
+
+
+from datetime import datetime
+
+
+
 
 import settings
 
 
 def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
-    global root, canvas, image, label , var, var1, gain, angle, fig, ax, Hist, fig1, button_stop
+    global root, canvas, image, label , var, var1, gain, angle, fig, ax, Hist, fig1, button_stop, folder
     
     # Create root object
     root = Tk()
@@ -53,8 +61,16 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     fig1 = plt.figure(figsize =(4,4), facecolor = 'whitesmoke' )# 
     Hist = FigureCanvasTkAgg(fig1, master=Hist_window)  # A tk.DrawingArea.
     Hist.draw()
+
+    # FPS label 
+    prompt = 'fps'
+    label = Label(master= right_frame,bg='white', text=prompt, width=len(prompt))
+
  
-    
+    # Entry 
+    label_folder = Label(master= left_frame, text="Folder name")
+
+    folder = Entry(master =left_frame )    
     # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
     var = DoubleVar()
     scale = Scale( left_frame, variable = var, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Dynamic range (dB)' ) 
@@ -67,37 +83,49 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     gain.set(80)
 
     angle = DoubleVar()
-    scale_angle = Scale( left_frame, variable = angle, orient=HORIZONTAL,from_=-30, to=30, resolution=1, length=300, label='Angle (12-51 dB)' ) 
+    scale_angle = Scale( left_frame, variable = angle, orient=HORIZONTAL,from_=-10, to=10, resolution=0.5, length=300, label='Angle (12-51 dB)' ) 
     angle.set(0)
-    # FPS label 
-    prompt = 'fps'
-    label = Label(master= right_frame,bg='white', text=prompt, width=len(prompt))
+
    
     #  Buttons
     button_M_stop= Button(master=left_frame,bg='whitesmoke', text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
     button_stop = Button(master=left_frame,bg='whitesmoke', text="Stop", command=lambda:_toggle(bCntlQ))
     button_Mode = Button(master=left_frame,bg='whitesmoke', text="Mode", command=_mode)
-    button_Save = Button(master=left_frame,bg='whitesmoke', text="Save", command=_save)
 
+    button_Save = Button(master=left_frame,bg='whitesmoke', text="Save", command=_save)
     button_Program = Button(master=left_frame,bg='whitesmoke', text="Program", command=lambda:_Program(bCntlQ))
+    # button_ProgramSave = Button(master=left_frame,bg='whitesmoke', text="Program&Save", command=lambda:_ProgramSave(bCntlQ))
 
     #  Grid Place *******************************************************************
     canvas.get_tk_widget().grid(row=1, column=0, padx=5, pady=5, sticky='n')
     label.grid(row=2, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
 
-    button_stop.grid(row=0, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
-    button_Mode.grid(row=0, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
-    button_Save.grid(row=0, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
-    button_M_stop.grid(row=0, column=3, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+   
 
-    ttk.Separator(left_frame,orient=HORIZONTAL).grid(row=1, column=0, columnspan=4,pady=5, sticky='EW')
-    scale.grid(row=3, column=0,columnspan=4 , padx=5, pady=5, sticky='n')
-    scale1.grid(row=4, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
+    button_stop.grid(row=1, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_Mode.grid(row=1, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_M_stop.grid(row=1, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+
+    ttk.Separator(left_frame,orient=HORIZONTAL).grid(row=2, column=0, columnspan=4,pady=5, sticky='EW')
+    scale.grid(row=3, column=0,columnspan=3 , padx=5, pady=5, sticky='n')
+    scale1.grid(row=4, column=0,columnspan=3,  padx=5, pady=5, sticky='n')
+
 
     ttk.Separator(left_frame,orient=HORIZONTAL).grid(row=5, column=0, columnspan=4,pady=5, sticky='EW')
-    scale_gain.grid(row=6, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
-    scale_angle.grid(row=7, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
-    button_Program.grid(row=8, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    label_folder.grid(row=6, column=0,columnspan=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    folder.grid(row=6, column=2,columnspan=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+
+    scale_gain.grid(row=7, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
+    scale_angle.grid(row=8, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
+
+    
+    button_Program.grid(row=9, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_Save.grid(row=9, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    # button_ProgramSave.grid(row=9, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+
+   
+
+    
 
     # Hist.get_tk_widget().grid(row=1, column=0,columnspan=4, padx=20, pady=5, sticky='W')
 
@@ -261,13 +289,33 @@ def _mode():
 
 def _save():
     # ax.axis('off')
-    file =  'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    fold = str(folder.get())
+    if fold != "":
+        fold = 'UserSessions/' + fold + '/'
+        print(fold)
+        # os.mkdir("./"+str(fold))
+        Path("./"+str(fold)).mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'Images/').mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'Arrays/').mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'RFArrays/').mkdir(parents=True, exist_ok=True)
+    else:
+        print("Saving at top level")
+
+
+    now = datetime.now()
+    current_time = now.strftime("%H_%M_%S")
+    # print("Current Time =", current_time)
+    
+    # file =  fold + 'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    # file =  'B_' + current_time +"_" +str(angle.get()).replace(".", "_")
+    file =  'B_' + str(gain.get()).replace(".", ",") + "_" +str(angle.get()).replace(".", ",")
+    print(file)
     Current_Array = DataToPlot
     Current_RFArray = result_RF
-    fig.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    fig.savefig(fold +'Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
     # ax.axis('on')
-    np.save('Arrays/' + file,Current_Array)
-    np.save('RFArrays/' + file,Current_RFArray)
+    np.save(fold +'Arrays/' + file,Current_Array)
+    np.save(fold +'RFArrays/' + file,Current_RFArray)
     if settings.DebugMode == 1:
         print(Current_Array.shape)
         np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
@@ -293,7 +341,7 @@ def _save():
     
 def _toggle(bCntlQ):
     settings.stopper = not settings.stopper
-    bCntlQ.put([settings.stopper, gain.get(), angle.get()])
+    bCntlQ.put([settings.stopper, gain.get(), 0])
     button_stop.config(text= 'Stop' if settings.stopper else 'Start')
 
 def _Program(bCntlQ):
@@ -311,9 +359,7 @@ def _Program(bCntlQ):
     # print("number of cycles:")
     # print(n)
 
-  
-
-    d = settings.Pitch * round(math.sin(math.radians(angle.get())), 3)
+    d = settings.Pitch * round(math.sin(math.radians(angle.get())), 10)
     # d = angle.get()
     print("distance (mm):")
     print(d)
@@ -325,6 +371,12 @@ def _Program(bCntlQ):
     
 
     bCntlQ.put([settings.stopper, gain.get(), n])
+
+
+def _ProgramSave(bCntlQ):
+    _Program(bCntlQ)
+    time.sleep(3)
+    _save()
 
 def _Mtoggle(m_q_enabler):
     # global settings.Mstopper

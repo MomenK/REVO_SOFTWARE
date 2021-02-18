@@ -18,7 +18,7 @@ def BModeTask(port,bDateQ,bCntlQ):
             bCntlD = bCntlQ.get_nowait()
             enabler = bCntlD[0]
             gain = bCntlD[1]
-            angle = bCntlD[2]
+            num_cycle = bCntlD[2]
             # if gain != local_gain: #write the gain value
             # local_gain = gain
             gain_hex = ser.write_gain(int(gain))
@@ -26,7 +26,7 @@ def BModeTask(port,bDateQ,bCntlQ):
             
             # if angle != local_angle:
             # local_angle = angle
-            ser.write_angle(int(angle))
+            ser.write_angle(num_cycle)
 
              
 

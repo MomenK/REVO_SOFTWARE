@@ -91,16 +91,16 @@ class RSerial(serial.Serial):
         super().write(data)
     pass
 
-    def write_angle(self, theta):
+    def write_angle(self, n):
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
         super().write(bytearray(b'\x00\x01')) # set mode to beamforming
-        delayV = theta
-        if theta > 0:
+        
+        if n > 0:
             for i in range(0,32):
-                self.send_data(i,delayV* i)
+                self.send_data(i, round(n* i) )
         else:   
             for i in range(0,32):
-                self.send_data(i,delayV* (i - 31) )
+                self.send_data(i, round(n*(i - 31)) )
 
         # for i in range(0,32):
         #     self.send_data(i,delayV)
