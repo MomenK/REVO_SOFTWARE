@@ -67,10 +67,10 @@ class PW_BF():
 
 Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 1.75)
 
-XX = np.load('./UserSessions/test/RFArrays/B_80,0_0,0.npy')
+XX = np.load('./UserSessions/test2/RFArrays/B_80,0_10,0.npy')
 XX = XX-np.mean(XX,axis=0)
 
-YY = Engine.Dyn_R(XX,0)
+YY = Engine.Dyn_R(XX,10)
 
 XX_en = np.abs(hilbert(XX))
 YY_en = np.abs(hilbert(YY))

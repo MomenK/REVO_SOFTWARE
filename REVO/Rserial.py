@@ -95,15 +95,15 @@ class RSerial(serial.Serial):
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
         super().write(bytearray(b'\x00\x01')) # set mode to beamforming
         
-        if n > 0:
-            for i in range(0,32):
-                self.send_data(i, round(n* i) )
-        else:   
-            for i in range(0,32):
-                self.send_data(i, round(n*(i - 31)) )
+        # if n > 0:
+        #     for i in range(0,32):
+        #         self.send_data(i, round(n* i) )
+        # else:   
+        #     for i in range(0,32):
+        #         self.send_data(i, round(n*(i - 31)) )
 
-        # for i in range(0,32):
-        #     self.send_data(i,delayV)
+        for i in range(0,32):
+                self.send_data(i, round(n* i) + 500)
 
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
         super().write(bytearray(b'\x00\x03')) # set to pulsering
