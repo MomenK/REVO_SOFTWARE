@@ -1,330 +1,345 @@
-import tkinter
+# TOLERANCE = 0
+# p = float(10**TOLERANCE)
+# def my_round_5(some_float):
+#     return int(some_float  + 0.5)
 
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.backend_bases import key_press_handler
-import matplotlib.pyplot as plt
+# print(my_round_5(1.4))
 
 import numpy as np
-import time
+from scipy.interpolate import interp1d, interp2d
+
+z = np.arange(0,50).reshape(10,5).T
+
+print(z)
+
+x = np.arange(0,5)
+y = np.arange(0,10)
+
+print(x)
+
+f = interp2d(x,y,z.T)
+
+y_hat = f([0],[1,2])
+
+print(y_hat)
 
 
-import settings
 
 
-def plot(q,q_fps,m_q,m_q_fps,q_enabler,m_q_enabler,BModeInstance,MModeInstance):
-    global canvas, toolbar, image, button_stop, button_M_stop, label, root, var, var1, fig, image, ax
+
+# import numpy as np
+
+# z = np.arange(0,1000)
+# print(z.shape)
+
+# x = np.arange(0,32)
+# print(x.shape)
+
+
+# xi = 5
+
+
+# # Need to generate delays.. 1000 X 32 delays = z + (xi+x)
+# zz = np.repeat([z],32, axis=0).T
+# print(zz.shape)
+
+
+# xx = np.repeat([x],1000, axis=0)
+# print(xx.shape)
+
+
+# import numpy as np
+# import os
+# print(os.path.abspath("."))
+# import matplotlib.pyplot as plt
+# from scipy.signal import hilbert, chirp
+# import math
+# from scipy.interpolate import interp1d, interp2d
+# import time
+
+# class PW_BF():
+#     def __init__(self, sampling_rate, Pitch, C, F_num):
+#         self.sampling_rate = sampling_rate
+#         self.Pitch = Pitch
+#         self.C = C
+#         self.F_num = F_num
+#         self.step_x = 63
+#         self.step_z = 1000
+#         self.res_mm_x = Pitch/2
+#         self.res_mm_z = 0.02
+
+#         self.postion = np.arange(0, 32) 
+#         self.zeros = np.zeros(32)
+
+
+#         mask = np.zeros((63,1000,32))
+#         for i in range(0,63):
+#             kk = np.arange(0, self.step_z)
+#             a = kk*self.res_mm_z/(2*self.F_num)
+#             start = (np.floor((i*self.res_mm_x - a)/self.Pitch)).astype(int)
+#             end =  (np.ceil((i*self.res_mm_x + a)/self.Pitch)+1).astype(int)
+#             start[ start< 0] = 0
+#             end[ end > 31] = 31
+#             for jj in range(0,1000):
+#                 mask[i, jj, start[jj]:end[jj] ] = 1
+#         self.mask = mask
+
+#     def t_to_index(self,t):
+#         return t*self.sampling_rate
+#         # return t*self.sampling_rate # Poor method.. need to interpolate later on
+
+#     def delay_t(self,z,x,xi,theta):
+#         d_t = x * math.sin(math.radians(theta)) + z * math.cos(math.radians(theta))
+#         # d_t = z
+#         d_r = ( z**2 + (x-xi)**2  )**0.5
+#         t = (d_t + d_r )/self.C
+#         return t
+
+#     def interpol(self,x1,x2,mod):
+#         return (mod * (x2 - x1)) + x1
     
-    # Create root object
-    root = tkinter.Tk()
-    root.wm_title("REVO IMAGING TOOL")  
-    root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(BModeInstance,MModeInstance,root))
-    root.maxsize(900, 600) # width x height
-    root.config(bg="skyblue")
+#     # def Dyn_R(self,X,theta ):
+#     #     Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
+#     #     Y =  np.ones((self.step_z,self.step_x))
+#     #     print(X.shape, Y.shape)
+#     #     for i in range(0, self.step_x):
+#     #         # print(i, i*self.res_mm_x)
+#     #         # print("*********************************************")
+#     #         for k in range(0, self.step_z):
+#     #             # print( "\t" + str(k) + " " + str(k*self.res_mm_z))
+#     #             a = k*self.res_mm_z/(2*self.F_num)
+#     #             start = max(0,math.floor((i*self.res_mm_x - a)/self.Pitch))
+#     #             end =  min(31, math.ceil((i*self.res_mm_x + a)/self.Pitch)+1)
+#     #             ee = np.arange(start, end) 
 
-    # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
-    var = tkinter.DoubleVar()
-    scale = tkinter.Scale( root, variable = var, orient=tkinter.HORIZONTAL,from_=1, to=75, resolution=0.5, length=300, label='Dynamic range_H (dB)' ) 
+#     #             Dd_t = self.delay_t(k*self.res_mm_z, i*self.res_mm_x , ee*self.Pitch, theta)
+#     #             Dindex = self.t_to_index(Dd_t)  # Check if index is valid
 
-    var1 = tkinter.DoubleVar()
-    scale1 = tkinter.Scale( root, variable = var1, orient=tkinter.HORIZONTAL,from_=1, to=75, resolution=0.5, length=300, label='Dynamic range_L(dB)' ) 
-    # Create Figure 
-    fig = plt.figure()
-    ax = fig.gca()
-    img =  np.zeros((1024,32))
-    if settings.DebugMode == 1:
-        image = plt.imshow(img, cmap='gray', aspect=0.1)
-    else:
-        image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False,extent=[0,31* 0.3,1024*1.498*0.5*(1/20),0], aspect=1)
-        plt.xlabel('Width (mm)')
-        plt.ylabel('Depth (mm)')
-    
-    canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-    canvas.draw()
-    # canvas.get_tk_widget().pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=1)
-    toolbar = NavigationToolbar2Tk(canvas, root)
-    toolbar.update()
-    
+#     #             Dindex_rounded = np.around(Dindex).astype(int)
+#     #             indexes = (Dindex_rounded,ee)
 
-    # FPS label 
-    prompt = 'fps'
-    label = tkinter.Label(master= root, text=prompt, width=len(prompt))
-    
-    #  Buttons
-    button_M_stop =tkinter.Button(master=root, text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
-    button_quit = tkinter.Button(master=root, text="Quit", command=lambda: _quitAll(BModeInstance,MModeInstance,root))
-    button_stop =tkinter.Button(master=root, text="Stop", command=lambda:_toggle(q_enabler))
-    button_Mode = tkinter.Button(master=root, text="Mode", command=_mode)
-    button_Save = tkinter.Button(master=root, text="Save", command=_save)
-
-    #  Pack
-    canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-    scale.pack(anchor=tkinter.CENTER)
-    scale1.pack(anchor=tkinter.CENTER)
-    label.pack(side=tkinter.TOP)
-    button_quit.pack(side=tkinter.LEFT)
-    button_stop.pack(side=tkinter.LEFT)
-    button_Mode.pack(side=tkinter.LEFT)
-    button_Save.pack(side=tkinter.LEFT)
-    button_M_stop.pack(side=tkinter.RIGHT)
-
-    # Start App task
-    updateplot(q,   q_fps)
-    M_updateplot(m_q, m_q_fps)
-    root.mainloop()
-
-
-
-def _quitAll(process,M_process, top):
-    global quitter
-    quitter = True
-    process.terminate()
-    M_process.terminate()
-    top.quit()
-    top.destroy()
-
-def _mode():
-    settings.modeVar = not settings.modeVar
-
-
-
-def _save():
-    
-    # ax.axis('off')
-    file =  'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
-    Current_Array = DataToPlot
-    fig.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
-    ax.axis('on')
-
-    np.save('Arrays/' + file,Current_Array)
-
-    if settings.DebugMode == 1:
-        print(Current_Array.shape)
-
-        np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
-
-        failed = []
-
-        for i in range(0,31-2):
-            if np.all(Current_Array[1:,i] == Current_Array[1:,i+2]) :
-                pass
-            else:
-                print(i)
-                x = Current_Array[1:,i] == Current_Array[1:,i+2]
-                # print(x)
-                print(np.where( x == False))
-                failed.append(i)
-        print("Sample of interest is!" + str(Current_Array[20,0]))
-        if (Current_Array[20,0] % 2) == 0:
-            print("Even!")
-        else:
-            print("Odd!")
-
-
-        print(failed)
-        print(len(failed))
-    
-    
-
-def _toggle(q_enabler):
-
-    settings.stopper = not settings.stopper
-    q_enabler.put(settings.stopper)
-    button_stop.config(text= 'Stop' if settings.stopper else 'Start')
-
-
-
-def _Mtoggle(m_q_enabler):
-    # global settings.Mstopper
-    # settings.Mstopper = not settings.Mstopper
-    
-    m_q_enabler.put(True)
-    # button_M_stop.config(text= 'Stop')
-    button_M_stop["state"] = "disabled"
-    # print(settings.Mstopper)
-    # button_M_stop.config(text= 'Stop' if settings.Mstopper else 'Start')
-
-
-def updateplot(q,q_fps):
-    global DataToPlot, maxScale
-
-    try:       
-        
-        result=q.get_nowait()
-        if settings.DebugMode == 1:
-            DataToPlot = result
-            image.set_data(DataToPlot)
-            image.set_clim(vmin=-1000, vmax=1000)
-
-            failed = []
-
-            for i in range(0,31-2):
-                if np.all(DataToPlot[3:,i] == DataToPlot[3:,i+2]) :
-                    pass
-                else:
-                    print(i)
-                    x = DataToPlot[3:,i] == DataToPlot[3:,i+2]
-                    # print(x)
-                    print(np.where( x == False))
-                    failed.append(i)
-
+#     #             Y[k,i] +=  np.sum(X[indexes])  # Check if within F_nu
           
+#     #     return Y
+
+#     def Dyn_R(self,X,theta ):
+#         Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
+#         Y =  np.zeros((self.step_z,self.step_x))
+#         # print(X.shape, Y.shape)
+#         for i in range(0, self.step_x):
+#             # print(i, i*self.res_mm_x)
+#             # print("*********************************************")
+#             # for k in range(0, self.step_z):
+#                 # print( "\t" + str(k) + " " + str(k*self.res_mm_z))
+#             kk = np.arange(0, self.step_z)
+#             k = np.repeat([kk],32, axis=0).T
+#             # a = kk*self.res_mm_z/(2*self.F_num)
+
+#             # ee = np.arange(0, 32) 
+
+#             ee =  np.repeat([self.postion], self.step_z, axis=0)
+#             # print(ee.shape)
+#             #  Should take in 1000x1 and 32x1 and give you 1000x32
+#             Dd_t = self.delay_t(k*self.res_mm_z, i*self.res_mm_x ,ee*self.Pitch, theta) 
+#             Dindex = self.t_to_index(Dd_t)  # Check if index is valid
+
+#             # U do not need to repeat! There must be a better code!!!!!!!!!!!!!!!!!!!!
+
+#             # print(Dindex.shape)
+
+#             Dindex_rounded = np.around(Dindex).astype(int)
+#             # print(Dindex_rounded.shape)
+
+#             # mask = np.zeros((1000,32))
+#             # start = (np.floor((i*self.res_mm_x - a)/self.Pitch)).astype(int)
+#             # end =  (np.ceil((i*self.res_mm_x + a)/self.Pitch)+1).astype(int)
+#             # start[ start< 0] = 0
+#             # end[ end > 31] = 31
+
+#             # for jj in range(0,1000):
+#             #     mask[jj, start[jj]:end[jj] ] = 1
             
-            if (DataToPlot[20,0] % 2) == 0:
-                print("Even!")
-            # else:
-            #     print("Odd!")
-
-            if not (DataToPlot[20,0]   == 47): 
-                print("Sample of interest is :" + str(DataToPlot[20,:]))
-                assert True, "DOGSHITE"
-
-            if len(failed) > 0:
-                print(failed)
-                print(len(failed))
-
-
-        else:
-    
-            result_log = 20*np.log10(result)  # Chaning log is add a sacling factor!
-      
-            DataToPlot =  result if settings.modeVar else result_log
-            # DataToPlot =  result 
-            # maxScale =  var.get()/100 * 4096 if settings.modeVar else var.get()/100 * DataToPlot.max()
-            # maxScale =  var.get()/100 * DataToPlot.max()
-        
-            image.set_data(DataToPlot)
-            # print(maxScale)
-            # image.set_clim(vmin=0, vmax=var.get()/100 * 5000)
-            image.set_clim(vmin=0, vmax= 10**(var.get()/20))
-            image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
-            print(DataToPlot.max(), np.mean(DataToPlot))
-
-        
-
-        canvas.draw()
-        text = q_fps.get_nowait()
-        label.config(text=text, width=len(text))
-        root.after(1,updateplot,q,q_fps)
-    
-    except:
-     
-        root.after(1,updateplot,q,q_fps)
-
-def M_updateplot(m_q,m_q_fps):
-    try:
-
-        Q = m_q.get_nowait()
-        M_Image = Q[0]
-        M_timestamp =  Q[1]
-
-        # time.sleep(1)
-        # M_timestamp = m_q_fps.get_nowait()
-
-        root.after(1,M_mode_plot,M_Image,M_timestamp,M_timestamp)
-
-        # M_mode_plot(M_Image,M_timestamp,M_timestamp)
-
-        root.after(10,M_updateplot,m_q,m_q_fps)
-       
-    except:
-        root.after(1,M_updateplot,m_q,m_q_fps)
-   
-
-
-
-
-
-
-def M_mode_plot(agg,boy,timestampArr):
-    print('Plotting M mode')
-    
-    result = np.array(agg)
-    timeStamp = np.array(timestampArr)
-
-    Mimage =  result
-    # print(Mimage.shape)
-    Mimage = Mimage.transpose(1,0,2)
-    # print(Mimage.shape)
-    Mimage = Mimage.reshape((1024,-1))
-    print(Mimage.shape)
-    # print(len(boy))
-
-   
-    plt.close()
-    plt.figure()
-    # THIS IS BAD AND INTRODUCES BLACK LINES FOR SOME REASON
-    # Image = plt.imshow(Mimage,cmap='gray',interpolation='None', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto',animated=False)
-    # Image = plt.imshow(Mimage,cmap='gray',aspect= 4)
-    # This is the fix for some reason! interpolation=None works. interpolation='None' does not!
-    Img =  np.zeros((1024,2000))
-    if settings.DebugMode == 1:
-        Image = plt.imshow(Img, cmap='gray', aspect=1)
-        Image.set_data(Mimage)
-        Image.set_clim(vmin=-1000, vmax=1000)
-        np.savetxt("foo.csv", Mimage, delimiter=",",fmt='%5.1f')
-
-        failed = []
-
-        for i in range(0,2000-1):
-            if np.all(Mimage[10:,i] == Mimage[10:,i+1]) :
-                pass
-            else:
-                print(i)
-                x = Mimage[10:,i] == Mimage[10:,i+1]
-                print(np.where( x == False))
-                failed.append(i)
+#             # mask[(indexies)] = 1
+#             # jj = 0
+#             # for (row, row_start, row_end) in zip( mask, start, end):
                 
-
-        print(failed)
-        print(len(failed))
-       
-
-
-    else:
-        Image = plt.imshow(Mimage,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
-        Image.set_data(Mimage)
-        Image.set_clim(vmin=0, vmax=var.get()/100 * 4096)
-        plt.xlabel('Time (s)')
-        plt.ylabel('Depth (mm)')
-    
- 
-    
-
-    #   # Has to be passed from inside the other process
-
-    file =  'M_' + str(time.ctime()).replace(" ", "_").replace(":", "")
-    # saving image really slow stuff
-    # plt.axis('off')
-    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
-    plt.axis('on')
-
- 
-
-    np.save('Arrays/' + file,Mimage)
-    np.save('Arrays/' + 'T'+ file,timeStamp)
+#             #     # row[start[jj]:end[jj]] = 1
+#             #     row[row_start:row_end] = 1
+#             #     # jj = jj +1
 
     
+#             indexes = (Dindex_rounded,ee)
+     
+            
+#             Y[:,i] = np.sum(X[indexes]*self.mask[i],axis=1)         
+#         return Y
 
-    fps = []
-    for i in range(0,1000-1):
-        fps.append(1/(timeStamp[i+1] - timeStamp [i]))
 
-    print('average fps: ' + str(sum(fps)/len(fps)))
-    print("Done")
 
-    figf, axsf = plt.subplots(3)
-    figf.suptitle('Vertically stacked subplots')
-    axsf[0].plot(boy)
-    axsf[1].plot(timeStamp)
-    axsf[2].plot(fps)
+
+#     # def Dyn_R(self,X,theta ):
+#     #     Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
+#     #     Y =  np.ones((self.step_z,self.step_x))
+#     #     print(X.shape, Y.shape)
+#     #     for i in range(0, self.step_x):
+#     #         # print(i, i*self.res_mm_x)
+#     #         # print("*********************************************")
+#     #         for k in range(0, self.step_z):
+#     #             # print( "\t" + str(k) + " " + str(k*self.res_mm_z))
+#     #             a = k*self.res_mm_z/(2*self.F_num)
+#     #             start = max(0,math.floor((i*self.res_mm_x - a)/self.Pitch))
+#     #             end =  min(31, math.ceil((i*self.res_mm_x + a)/self.Pitch)+1)
+#     #             ee = np.arange(start, end) 
+
+#     #             Dd_t = self.delay_t(k*self.res_mm_z, i*self.res_mm_x , ee*self.Pitch, theta)
+#     #             Dindex =self.t_to_index(Dd_t) # Check if index is valid
+
+#     #             filter_data = np.diag(Xf(Dindex)[start:end])
+        
+#     #             Y[k,i] +=  np.sum(filter_data)  # Check if within F_nu
+#     #     return Y
     
-    button_M_stop["state"] = "normal"
+#     # def Dyn_R(self,X,theta ):
+#     #     Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
+#     #     Y =  np.ones((self.step_z,self.step_x))
+#     #     print(X.shape, Y.shape)
+#     #     for i in range(0, self.step_x):
+#     #         # print(i, i*self.res_mm_x)
+#     #         # print("*********************************************")
+#     #         k = np.arange(0, self.step_z)
+            
+          
+#     #         a = k*self.res_mm_z/(2*self.F_num)
+#     #         start = max(0,math.floor((i*self.res_mm_x - a)/self.Pitch))
+#     #         end =  min(31, math.ceil((i*self.res_mm_x + a)/self.Pitch)+1)
 
-    plt.show()
+#     #             ee = np.arange(start, end) 
+
+#     #             Dd_t = self.delay_t(k*self.res_mm_z, i*self.res_mm_x , ee*self.Pitch, theta)
+#     #             Dindex =self.t_to_index(Dd_t) # Check if index is valid
+
+#     #             filter_data = np.diag(Xf(Dindex)[start:end])
+        
+#     #             Y[k,i] +=  np.sum(filter_data)  # Check if within F_nu
+#     #     return Y
+
+# # ******************************************************************************************************************************************************************
+# # Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 1.75)
+
+# # XX = np.load('./UserSessions/test2/RFArrays/B_80,0_10,0.npy')
+# # XX = XX-np.mean(XX,axis=0)
+
+# # YY = Engine.Dyn_R(XX,10)
+
+# # XX_en = np.abs(hilbert(XX))
+# # YY_en = np.abs(hilbert(YY))
+
+# # plt.figure()
+# # plt.subplot(121)
+# # Image = plt.imshow(XX_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,XX_en.shape[0] *1.540*0.5*(1/20),0], animated=False,  aspect=1)
+# # plt.subplot(122)
+# # Image = plt.imshow(YY_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
+# # plt.figure()
+# # plt.subplot(121)
+# # Image = plt.imshow(20*np.log10(XX_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,XX_en.shape[0] *1.540*0.5*(1/20),0], animated=False,  aspect=1)
+# # # Image.set_clim(vmin=10, vmax=60)
+# # plt.subplot(122)
+# # Image = plt.imshow(20*np.log10(YY_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
+# # # Image.set_clim(vmin=37, vmax=62)
+# # plt.show()
+
+# # ******************************************************************************************************************************************************************
 
 
-    return
+# # Z = 20*np.log10(YY_en)
+# # s= np.std(Z.flatten())
+# # m = np.mean(Z.flatten())
+# # r = 2
+# # r1 = m+ r*s 
+# # r2 = m- r*s 
+# # print(m,s, r2 , r1)
 
 
-  
+# # z = 0.1
+# # Engine = PW_BF(20 ,0.3,1.54,1)
+# # time_delay = Engine.delay_t(z ,0 ,0, 0)
+# # index = Engine.t_to_index(time_delay)
+# # print(index)
+# # print(Engine.interpol(0,10,0.3))
+# # # With unfocusing
+# # index_u = 2*20/1.54 * z
+# # print(index_u)
+
+# # ******************************************************************************************************************************************************************
+
+# from os import listdir
+# from os.path import isfile, join
+
+# Path = './UserSessions/test2/RFArrays/'
+# # Path = './RFArrays/'
+# files = listdir(Path)
+
+# Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 2)
+# Y_FULL =  np.zeros((Engine.step_z,Engine.step_x))
+
+
+# # for i in range(0, len(files)):
+# #     print(i)
+# t0 = time.perf_counter()
+
+# # angles = [0]
+
+# angles = range(-10,11)
+
+# for file in files:
+#     tt0 = time.perf_counter()
+#     fileName = str(file).replace(".npy","")
+#     fileNameParts = fileName.replace(",", ".").split("_")
+#     angle = float(fileNameParts[2])
+
+    
+
+#     if angle in angles:
+#         print("filename: " + fileName, "Angle : " , angle)
+#         X = np.load(Path +file )
+#         # print(XX.shape)
+#         X = X-np.mean(X,axis=0)
+
+#         Y = Engine.Dyn_R(X,angle)
+
+#         Y_FULL = Y_FULL + Y
+#         print(Y_FULL.shape)
+
+#         if angle == 0.0:
+#             YY = Y
+#             XX = X[0: round(  Engine.step_z*Engine.res_mm_z/(1.540*0.5*(1/20)) )+1,:]
+#         tt1 = time.perf_counter()
+#         print('file time: ' + "{:.2f}".format(tt1-tt0))
+
+# t1 = time.perf_counter()
+# print('total time: ' + "{:.2f}".format(t1-t0))
+
+# XX_en = np.abs(hilbert(XX))
+# YY_en = np.abs(hilbert(YY))
+# Y_FULL_en = np.abs(hilbert(Y_FULL))
+
+# plt.figure()
+# plt.subplot(131)
+# Image = plt.imshow(XX_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,XX_en.shape[0] *1.540*0.5*(1/20),0], animated=False,  aspect=1)
+# plt.subplot(132)
+# Image = plt.imshow(YY_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
+# plt.subplot(133)
+# Image = plt.imshow(Y_FULL_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
+
+# plt.figure()
+# plt.subplot(131)
+# Image = plt.imshow(20*np.log10(XX_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,XX_en.shape[0] *1.540*0.5*(1/20),0], animated=False,  aspect=1)
+# # Image.set_clim(vmin=10, vmax=60)
+# plt.subplot(132)
+# Image = plt.imshow(20*np.log10(YY_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
+# # Image.set_clim(vmin=37, vmax=62)
+# plt.subplot(133)
+# Image = plt.imshow(20*np.log10(Y_FULL_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
+# # Image.set_clim(vmin=37, vmax=62)
+
+# plt.show()
