@@ -1,30 +1,38 @@
 import numpy as np
-from scipy.interpolate import interpn
-# def value_func_2d(x, y):
-#     return 2 * x + 3 * y 
-# x = np.linspace(0, 5)
-# y = np.linspace(0, 5)
 
-x = np.arange(0, 1000)
-y = np.arange(0, 32)
-points = (x, y)
-# values = value_func_2d(*np.meshgrid(*points))
+e = np.arange(0,32)
 
-values = np.random.rand(1000,32)
-
-print(x.shape,y.shape,values.shape)
-
-point = np.array([2.21, 3.12])
-print(interpn(points, values, point))
+ee = np.repeat([e],1000,axis=0)
+eee = np.repeat([ee],63,axis=0)
 
 
-point = np.array([[2.21, 1] ,[ 3.12, 1]])
-print(point.shape)
-print(interpn(points, values, point))
+print(e.shape,ee.shape,eee.shape)
+# from scipy.interpolate import interpn
+# # def value_func_2d(x, y):
+# #     return 2 * x + 3 * y 
+# # x = np.linspace(0, 5)
+# # y = np.linspace(0, 5)
+
+# x = np.arange(0, 1000)
+# y = np.arange(0, 32)
+# points = (x, y)
+# # values = value_func_2d(*np.meshgrid(*points))
+
+# values = np.random.rand(1000,32)
+
+# print(x.shape,y.shape,values.shape)
+
+# point = np.array([2.21, 3.12])
+# print(interpn(points, values, point))
 
 
-point = ((2.21,1),(3.12,1))
-print(interpn(points, values, point))
+# point = np.array([[2.21, 1] ,[ 3.12, 1]])
+# print(point.shape)
+# print(interpn(points, values, point))
+
+
+# point = ((2.21,1),(3.12,1))
+# print(interpn(points, values, point))
 
 
 

@@ -37,6 +37,37 @@ class PW_BF():
         self.kk = np.repeat([kk],32, axis=0).T
         self.ee  = np.repeat([self.postion], self.step_z, axis=0)
 
+
+
+        e = np.arange(0,32)
+        ee = np.repeat([e],1000,axis=0)
+        eee = np.repeat([ee],63,axis=0)
+        eeeP = eee*self.Pitch
+
+        self.eee = eee
+        self.eeeP = eeeP
+
+
+        k = np.arange(0,1000)
+        kk = np.repeat([k],32,axis=0).T
+        kkk = np.repeat([kk],63,axis=0)
+        kkkZ = kkk*self.res_mm_z
+
+        self.kkk = kkk
+        self.kkkZ = kkkZ
+
+        i = np.arange(0,63)
+        ii = np.repeat([i],1000,axis=0)
+        print(ii.shape)
+        iii = np.repeat([ii],32,axis=0).T
+        print(iii.shape)
+        iiiX = iii*self.res_mm_x
+
+        self.iii =iii
+        self.iiiX = iiiX
+
+        self.eeeF = eee.flatten()
+
     def t_to_index(self,t):
         return t*self.sampling_rate
         # return t*self.sampling_rate # Poor method.. need to interpolate later on
@@ -102,8 +133,22 @@ class PW_BF():
     #         Y[:,i] = np.sum(X[indexes]*self.mask[i],axis=1) 
     #     return Y
 
+    def Dyn_R(self,X,theta ):
+        # kkkZ = self.kkkZ
+        # iiiX = self.iiiX
+        # eeeP = self.eeeP
+        # eee = self.eee
+        Dd_t = self.delay_t(self.kkkZ, self.iiiX ,self.eeeP, theta)  #  must return 63,1000,32!
+        Dindex = self.t_to_index(Dd_t)  # Check if index is vali
+        # print(Dindex.shape,Dindex.flatten().shape,eee.flatten().shape)
+        Dindex_rounded = np.int32(Dindex+0.5)
+        indexes = (Dindex_rounded,self.eee)  # 1000 depth with 32 delays index
+       
+        Y = np.sum(X[indexes]*self.mask,axis=2).T  
+        return Y
 
 
+# ********************************************************************************** INTERPOLE
 
     # def Dyn_R(self,X,theta ):
     #     Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
@@ -145,31 +190,65 @@ class PW_BF():
     #         Y[:,i] = np.sum(diag_arr*self.mask[i],axis=1)        
     #     return Y
 
-    def Dyn_R(self,X,theta ):
-        Y =  np.zeros((self.step_z,self.step_x))
-        print(X.shape, Y.shape)
-        k = self.kk*self.res_mm_z
-        eeP =  self.ee*self.Pitch
+    # def Dyn_R(self,X,theta ):
+    #     Y =  np.zeros((self.step_z,self.step_x))
+    #     print(X.shape, Y.shape)
+    #     k = self.kk*self.res_mm_z
+    #     eeP =  self.ee*self.Pitch
 
-        arr = np.zeros((1000,32))
+    #     arr = np.zeros((1000,32))
 
-        x = np.arange(0, 1024)
-        y = np.arange(0, 32)
-        points = (x,y)
-        values = X
-        EE = self.ee.flatten()
+    #     x = np.arange(0, 1024)
+    #     y = np.arange(0, 32)
+    #     points = (x,y)
+    #     values = X
+    #     EE = self.ee.flatten()
 
-        for i in range(0, self.step_x):
-            Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
-            Dindex = self.t_to_index(Dd_t)  # Check if index is vali
+    #     for i in range(0, self.step_x):
+    #         Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
+    #         Dindex = self.t_to_index(Dd_t)  # Check if index is vali
 
-            point = (Dindex.flatten(),EE)
+    #         point = (Dindex.flatten(),EE)
           
-            arr = interpn(points, values, point,method='linear',fill_value=0,bounds_error=False).reshape(1000,32)
+    #         arr = interpn(points, values, point,method='linear',fill_value=0,bounds_error=False).reshape(1000,32)
             
-            Y[:,i] = np.sum(arr*self.mask[i],axis=1)        
-        return Y
+    #         Y[:,i] = np.sum(arr*self.mask[i],axis=1)        
+    #     return Y
 
+
+    # def Dyn_R(self,X,theta ):
+      
+    #     # print(X.shape, Y.shape)
+    
+
+    #     arr = np.zeros((1000,32))
+
+    #     x = np.arange(0, 1024)
+    #     y = np.arange(0, 32)
+    #     points = (x,y)
+    #     values = X
+
+    #     kkkZ = self.kkkZ
+    #     iiiX = self.iiiX
+    #     eeeP = self.eeeP
+    #     eee = self.eee
+    #     eeeF = self.eeeF
+
+        
+    #     # Fix these three lines!
+    #     Dd_t = self.delay_t(kkkZ, iiiX ,eeeP, theta)  #  must return 63,1000,32!
+    #     Dindex = self.t_to_index(Dd_t)  # Check if index is vali
+    #     # print(Dindex.shape,Dindex.flatten().shape,eee.flatten().shape)
+    #     point = (Dindex.flatten(),eeeF)
+        
+    #     t0 = time.perf_counter()
+    #     arr = interpn(points, values, point,method='linear',fill_value=0,bounds_error=False).reshape(63,1000,32)
+    #     t1 = time.perf_counter()
+    #     print('Inte time: ' + "{:.2f}".format(t1-t0))
+            
+    #     Y = np.sum(arr*self.mask,axis=2).T   
+    #     # print(Y.shape)  
+    #     return Y
 
 # ******************************************************************************************************************************************************************
 # Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 1.75)
@@ -256,7 +335,7 @@ for file in files:
         Y = Engine.Dyn_R(X,angle)
 
         Y_FULL = Y_FULL + Y
-        print(Y_FULL.shape)
+        # print(Y_FULL.shape)
 
         if angle == 0.0:
             YY = Y
