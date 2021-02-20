@@ -1,27 +1,30 @@
-# TOLERANCE = 0
-# p = float(10**TOLERANCE)
-# def my_round_5(some_float):
-#     return int(some_float  + 0.5)
-
-# print(my_round_5(1.4))
-
 import numpy as np
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interpn
+# def value_func_2d(x, y):
+#     return 2 * x + 3 * y 
+# x = np.linspace(0, 5)
+# y = np.linspace(0, 5)
 
-z = np.arange(0,50).reshape(10,5).T
+x = np.arange(0, 1000)
+y = np.arange(0, 32)
+points = (x, y)
+# values = value_func_2d(*np.meshgrid(*points))
 
-print(z)
+values = np.random.rand(1000,32)
 
-x = np.arange(0,5)
-y = np.arange(0,10)
+print(x.shape,y.shape,values.shape)
 
-print(x)
+point = np.array([2.21, 3.12])
+print(interpn(points, values, point))
 
-f = interp2d(x,y,z.T)
 
-y_hat = f([0],[1,2])
+point = np.array([[2.21, 1] ,[ 3.12, 1]])
+print(point.shape)
+print(interpn(points, values, point))
 
-print(y_hat)
+
+point = ((2.21,1),(3.12,1))
+print(interpn(points, values, point))
 
 
 

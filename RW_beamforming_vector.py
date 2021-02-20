@@ -4,7 +4,7 @@ print(os.path.abspath("."))
 import matplotlib.pyplot as plt
 from scipy.signal import hilbert, chirp
 import math
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d, interp2d, interpn
 import time
 
 class PW_BF():
@@ -127,26 +127,47 @@ class PW_BF():
     #             Y[k,i] +=  np.sum(filter_data)  # Check if within F_nu
     #     return Y
 
-    def Dyn_R(self,X,theta ):
-        Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
-        XF = interp2d(range(0,X.shape[0]), range(0,X.shape[1]), X.T, kind='linear',fill_value = "extrapolate")
+    # def Dyn_R(self,X,theta ):
+    #     Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
         
+    #     Y =  np.zeros((self.step_z,self.step_x))
+    #     print(X.shape, Y.shape)
+    #     k = self.kk*self.res_mm_z
+    #     eeP =  self.ee*self.Pitch
+
+    #     for i in range(0, self.step_x):
+    #         Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
+    #         Dindex = self.t_to_index(Dd_t)  # Check if index is vali
+
+    #         diag_arr = np.diagonal(Xf(Dindex),  axis1 = 0,  axis2 = 2)
+        
+   
+    #         Y[:,i] = np.sum(diag_arr*self.mask[i],axis=1)        
+    #     return Y
+
+    def Dyn_R(self,X,theta ):
         Y =  np.zeros((self.step_z,self.step_x))
         print(X.shape, Y.shape)
         k = self.kk*self.res_mm_z
         eeP =  self.ee*self.Pitch
 
+        arr = np.zeros((1000,32))
+
+        x = np.arange(0, 1024)
+        y = np.arange(0, 32)
+        points = (x,y)
+        values = X
+        EE = self.ee.flatten()
+
         for i in range(0, self.step_x):
             Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
             Dindex = self.t_to_index(Dd_t)  # Check if index is vali
 
-            # diag_arr = np.diagonal(Xf(Dindex),  axis1 = 0,  axis2 = 2)
-
-            print(Dindex.shape, self.ee.shape)
-            # indexes = (Dindex,self.ee)
-            diag_arr = XF(Dindex.flatten(),self.ee.flatten()).reshape(1000,32)  # Check if within F_num  
-   
-            Y[:,i] = np.sum(diag_arr*self.mask[i],axis=1)        
+            point = (Dindex.flatten(),EE)
+          
+            arr = interpn(points, values, point,method='linear',fill_value=0,bounds_error=False).reshape(1000,32)
+            
+            Y[:,i] = np.sum(arr*self.mask[i],axis=1)        
         return Y
 
 
@@ -214,7 +235,7 @@ Y_FULL =  np.zeros((Engine.step_z,Engine.step_x))
 #     print(i)
 t0 = time.perf_counter()
 
-# angles = [0]
+# angles = range(-1,2)
 
 angles = range(-10,11)
 
