@@ -25,7 +25,7 @@ def send_data(port, channel, address, data):
     pass
 
 
-f = open("pulser_test.mif", "r")
+f = open("pulser.mif", "r")
 lines = f.readlines()
 f.close()
 

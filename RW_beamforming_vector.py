@@ -14,23 +14,23 @@ class PW_BF():
         self.C = C
         self.F_num = F_num
         self.step_x = 63
-        self.step_z = 1000
+        self.step_z = 600
         self.res_mm_x = Pitch/2
-        self.res_mm_z = 0.03
+        self.res_mm_z = 0.05
 
         self.postion = np.arange(0, 32) 
         self.zeros = np.zeros(32)
 
 
-        mask = np.zeros((63,1000,32))
-        for i in range(0,63):
+        mask = np.zeros((self.step_x,self.step_z,32))
+        for i in range(0,self.step_x):
             kk = np.arange(0, self.step_z)
             a = kk*self.res_mm_z/(2*self.F_num)
             start = (np.floor((i*self.res_mm_x - a)/self.Pitch)).astype(int)
             end =  (np.ceil((i*self.res_mm_x + a)/self.Pitch)+1).astype(int)
             start[ start< 0] = 0
             end[ end > 31] = 31
-            for jj in range(0,1000):
+            for jj in range(0,self.step_z):
                 mask[i, jj, start[jj]:end[jj] ] = 1
         self.mask = mask
 
@@ -40,24 +40,24 @@ class PW_BF():
 
 
         e = np.arange(0,32)
-        ee = np.repeat([e],1000,axis=0)
-        eee = np.repeat([ee],63,axis=0)
+        ee = np.repeat([e],self.step_z,axis=0)
+        eee = np.repeat([ee],self.step_x,axis=0)
         eeeP = eee*self.Pitch
 
         self.eee = eee
         self.eeeP = eeeP
 
 
-        k = np.arange(0,1000)
+        k = np.arange(0,self.step_z)
         kk = np.repeat([k],32,axis=0).T
-        kkk = np.repeat([kk],63,axis=0)
+        kkk = np.repeat([kk],self.step_x,axis=0)
         kkkZ = kkk*self.res_mm_z
 
         self.kkk = kkk
         self.kkkZ = kkkZ
 
-        i = np.arange(0,63)
-        ii = np.repeat([i],1000,axis=0)
+        i = np.arange(0,self.step_x)
+        ii = np.repeat([i],self.step_z,axis=0)
         print(ii.shape)
         iii = np.repeat([ii],32,axis=0).T
         print(iii.shape)
@@ -116,7 +116,6 @@ class PW_BF():
     #     return Y
 
     # def Dyn_R(self,X,theta ):
-    #     Xf = interp1d(range(0,X.shape[0]), X.T, kind='linear',fill_value = "extrapolate")
     #     Y =  np.zeros((self.step_z,self.step_x))
     #     print(X.shape, Y.shape)
     #     k = self.kk*self.res_mm_z
@@ -133,19 +132,19 @@ class PW_BF():
     #         Y[:,i] = np.sum(X[indexes]*self.mask[i],axis=1) 
     #     return Y
 
-    def Dyn_R(self,X,theta ):
-        # kkkZ = self.kkkZ
-        # iiiX = self.iiiX
-        # eeeP = self.eeeP
-        # eee = self.eee
-        Dd_t = self.delay_t(self.kkkZ, self.iiiX ,self.eeeP, theta)  #  must return 63,1000,32!
-        Dindex = self.t_to_index(Dd_t)  # Check if index is vali
-        # print(Dindex.shape,Dindex.flatten().shape,eee.flatten().shape)
-        Dindex_rounded = np.int32(Dindex+0.5)
-        indexes = (Dindex_rounded,self.eee)  # 1000 depth with 32 delays index
+    # def Dyn_R(self,X,theta ):
+    #     # kkkZ = self.kkkZ
+    #     # iiiX = self.iiiX
+    #     # eeeP = self.eeeP
+    #     # eee = self.eee
+    #     Dd_t = self.delay_t(self.kkkZ, self.iiiX ,self.eeeP, theta)  #  must return 63,1000,32!
+    #     Dindex = self.t_to_index(Dd_t)  # Check if index is vali
+    #     # print(Dindex.shape,Dindex.flatten().shape,eee.flatten().shape)
+    #     Dindex_rounded = np.int32(Dindex+0.5)
+    #     indexes = (Dindex_rounded,self.eee)  # 1000 depth with 32 delays index
        
-        Y = np.sum(X[indexes]*self.mask,axis=2).T  
-        return Y
+    #     Y = np.sum(X[indexes]*self.mask,axis=2).T  
+    #     return Y
 
 
 # ********************************************************************************** INTERPOLE
@@ -190,30 +189,29 @@ class PW_BF():
     #         Y[:,i] = np.sum(diag_arr*self.mask[i],axis=1)        
     #     return Y
 
-    # def Dyn_R(self,X,theta ):
-    #     Y =  np.zeros((self.step_z,self.step_x))
-    #     print(X.shape, Y.shape)
-    #     k = self.kk*self.res_mm_z
-    #     eeP =  self.ee*self.Pitch
+    def Dyn_R(self,X,theta ):
+        Y =  np.zeros((self.step_z,self.step_x))
+        print(X.shape, Y.shape)
+        k = self.kk*self.res_mm_z
+        eeP =  self.ee*self.Pitch
 
-    #     arr = np.zeros((1000,32))
+  
+        x = np.arange(0, 1024)
+        y = np.arange(0, 32)
+        points = (x,y)
+        values = X
+        EE = self.ee.flatten()
 
-    #     x = np.arange(0, 1024)
-    #     y = np.arange(0, 32)
-    #     points = (x,y)
-    #     values = X
-    #     EE = self.ee.flatten()
+        for i in range(0, self.step_x):
+            Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
+            Dindex = self.t_to_index(Dd_t)  # Check if index is vali
 
-    #     for i in range(0, self.step_x):
-    #         Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
-    #         Dindex = self.t_to_index(Dd_t)  # Check if index is vali
-
-    #         point = (Dindex.flatten(),EE)
+            point = (Dindex.flatten(),EE)
           
-    #         arr = interpn(points, values, point,method='linear',fill_value=0,bounds_error=False).reshape(1000,32)
+            arr = interpn(points, values, point,method='linear',fill_value=0,bounds_error=False).reshape(self.step_z,32)
             
-    #         Y[:,i] = np.sum(arr*self.mask[i],axis=1)        
-    #     return Y
+            Y[:,i] = np.sum(arr*self.mask[i],axis=1)        
+        return Y
 
 
     # def Dyn_R(self,X,theta ):
@@ -302,7 +300,7 @@ class PW_BF():
 from os import listdir
 from os.path import isfile, join
 
-Path = './UserSessions/test2/RFArrays/'
+Path = './UserSessions/tube_short/RFArrays/'
 # Path = './RFArrays/'
 files = listdir(Path)
 
@@ -316,32 +314,37 @@ t0 = time.perf_counter()
 
 # angles = range(-1,2)
 
-angles = range(-10,11)
+# angles = range(-10,11)
+angles = np.arange(-5,6,0.5)
 
 for file in files:
     tt0 = time.perf_counter()
     fileName = str(file).replace(".npy","")
-    fileNameParts = fileName.replace(",", ".").split("_")
-    angle = float(fileNameParts[2])
+    print()
+    if fileName[1] == 'F':
+        pass
+    else:
+        fileNameParts = fileName.replace(",", ".").split("_")
+        angle = float(fileNameParts[2])
 
-    
+        
 
-    if angle in angles:
-        print("filename: " + fileName, "Angle : " , angle)
-        X = np.load(Path +file )
-        # print(XX.shape)
-        X = X-np.mean(X,axis=0)
+        if angle in angles:
+            print("filename: " + fileName, "Angle : " , angle)
+            X = np.load(Path +file )
+            # print(XX.shape)
+            X = X-np.mean(X[0:1000,:],axis=0)
 
-        Y = Engine.Dyn_R(X,angle)
+            Y = Engine.Dyn_R(X,angle)
 
-        Y_FULL = Y_FULL + Y
-        # print(Y_FULL.shape)
+            Y_FULL = Y_FULL + Y
+            # print(Y_FULL.shape)
 
-        if angle == 0.0:
-            YY = Y
-            XX = X[0: round(  Engine.step_z*Engine.res_mm_z/(1.540*0.5*(1/20)) )+1,:]
-        tt1 = time.perf_counter()
-        print('file time: ' + "{:.2f}".format(tt1-tt0))
+            if angle == 0.0:
+                YY = Y
+                XX = X[0: round(  Engine.step_z*Engine.res_mm_z/(1.540*0.5*(1/20)) )+1,:]
+            tt1 = time.perf_counter()
+            print('file time: ' + "{:.2f}".format(tt1-tt0))
 
 t1 = time.perf_counter()
 print('total time: ' + "{:.2f}".format(t1-t0))
@@ -370,3 +373,7 @@ Image = plt.imshow(20*np.log10(Y_FULL_en),cmap='gray',interpolation='None',exten
 # Image.set_clim(vmin=37, vmax=62)
 
 plt.show()
+
+
+np.save(Path +'BF_0' ,YY)
+np.save(Path +'BF' ,Y_FULL)

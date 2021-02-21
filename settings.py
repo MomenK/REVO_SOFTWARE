@@ -23,8 +23,8 @@ def init():
     C = 1540 *1e3    # mm/s
     sampF = 20*1e6  # MHz
     unit_d = C* (1/sampF) * 0.5
-    start_y = 0
-    end_y = 500
+    start_y = 80
+    end_y = 800
 
     clock = 200*1e6
 

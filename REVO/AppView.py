@@ -50,7 +50,7 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     if settings.DebugMode == 1:
         image = plt.imshow(img, cmap='gray', aspect=0.1)
     else:
-        image = plt.imshow(img, cmap='gray',interpolation='None',animated=False, \
+        image = plt.imshow(img, cmap='gray',interpolation='hanning',animated=False, \
             extent=[0, 31* settings.Pitch, settings.end_y* settings.unit_d, settings.start_y* settings.unit_d ], aspect=1)
         plt.xlabel('Width (mm)')
         plt.ylabel('Depth (mm)')
