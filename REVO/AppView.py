@@ -18,15 +18,42 @@ from pathlib import Path
 
 from datetime import datetime
 
+from REVO.Beamformer import PW_BF
+
+from scipy import signal
 
 
+def butter_highpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
+
+def butter_highpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = signal.filtfilt(b, a, data)
+    return y
+
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = signal.filtfilt(b, a, data)
+    return y
 
 import settings
 
 
+
+
 def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
-    global root, canvas, image, label , var, var1, gain, angle, fig, ax, Hist, fig1, button_stop, folder
-    
+    global root, canvas, image, label , var, var1, gain, angle, fig, ax, Hist, fig1, folder, Engine
+    global button_stop, button_M_stop, button_TGC, button_BF
+    Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 1.75)
     # Create root object
     root = Tk()
     root.wm_title("REVO IMAGING TOOL")  
@@ -78,6 +105,7 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     var1 = DoubleVar()
     scale1 = Scale( left_frame, variable = var1, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Reject (dB)' ) 
     scale1.set(0)
+
     gain = DoubleVar()
     scale_gain = Scale( left_frame, variable = gain, orient=HORIZONTAL,from_=0, to=319, resolution=1, length=300, label='Gain (12-51 dB)' ) 
     gain.set(80)
@@ -94,8 +122,11 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
 
     button_Save = Button(master=left_frame,bg='whitesmoke', text="Save", command=_save)
     button_Program = Button(master=left_frame,bg='whitesmoke', text="Program", command=lambda:_Program(bCntlQ))
-    # button_ProgramSave = Button(master=left_frame,bg='whitesmoke', text="Program&Save", command=lambda:_ProgramSave(bCntlQ))
 
+    button_BF = Button(master=left_frame,bg='whitesmoke', text="BF: OFF", command=_BF)
+    button_TGC = Button(master=left_frame,bg='whitesmoke', text="TGC: OFF", command=_TGC)
+    # button_ProgramSave = Button(master=left_frame,bg='whitesmoke', text="Program&Save", command=lambda:_ProgramSave(bCntlQ))
+    
     #  Grid Place *******************************************************************
     canvas.get_tk_widget().grid(row=1, column=0, padx=5, pady=5, sticky='n')
     label.grid(row=2, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
@@ -121,6 +152,8 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     
     button_Program.grid(row=9, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
     button_Save.grid(row=9, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_BF.grid(row=10, column=0, padx=5, pady=5, sticky='w'+'e'+'n')
+    button_TGC.grid(row=10, column=1, padx=5, pady=5, sticky='w'+'e'+'n')
     # button_ProgramSave.grid(row=9, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
 
    
@@ -137,6 +170,7 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
 
 
 def updateplot(q,q_enabler):
+    
     global DataToPlot, result_RF
     try:    
         bDataD =  q.get_nowait() 
@@ -145,10 +179,32 @@ def updateplot(q,q_enabler):
         if settings.DebugMode == 1:
             result_full = result_RF
         else:
-            result_full = np.abs(hilbert(result_RF-np.mean(result_RF,axis=0)))
+
+            # result_RF_noMean = result_RF-np.mean(result_RF,axis=0)
+            result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
+            # result_RF_noMean = butter_lowpass_filter(result_RF_noMean.T,9*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+
+            # result_RF_noMean = result_RF - offseter
+     
+            if settings.TGC == True:
+                z_axis = np.arange(0,result_RF_noMean.shape[0]) * 1.540*0.5*(1/20)
+                TGC_dB = 0.5*5 * z_axis/10
+                TGC = 10**(TGC_dB/20)
+                result_RF_noMean = (result_RF_noMean.T * TGC).T
+
+            if settings.BF == True:
+                result_RF_noMean = Engine.Dyn_R(result_RF_noMean,0)
+
+
+            result_full = np.abs(hilbert(result_RF_noMean))
+          
+            
+            # if angle.get() == 0:
+            # 
             
 
-        result = result_full [settings.start_y:settings.end_y,:]
+        # result = result_full [settings.start_y:settings.end_y,:]  #  does not work until u correct scale
+        result = result_full
         if settings.DebugMode == 1:
             DataToPlot = result
             image.set_data(DataToPlot)
@@ -193,11 +249,11 @@ def updateplot(q,q_enabler):
         canvas.draw()
         text = bDataD[1]
         label.config(text=text, width=len(text))
-        root.after(1,updateplot,q,q_enabler)
+        root.after(10,updateplot,q,q_enabler)
 
         # q_enabler.put([settings.stopper, gain.get()])
     except:
-        root.after(1,updateplot,q,q_enabler)
+        root.after(10,updateplot,q,q_enabler)
 
 
 
@@ -345,31 +401,13 @@ def _toggle(bCntlQ):
     button_stop.config(text= 'Stop' if settings.stopper else 'Start')
 
 def _Program(bCntlQ):
-    # slope = round(math.tan(math.radians(angle.get())), 3)
-    # print("slope:")
-    # print(slope)
-
-    # d = slope * settings.Pitch 
-    # # d = angle.get()
-    # print("distance (mm):")
-    # print(d)
-
-    # # ONLY WORKS WITH MULTIPYING BY TWO !!!! I am going crazy
-    # n = d * settings.clock / settings.C 
-    # print("number of cycles:")
-    # print(n)
-
     d = settings.Pitch * round(math.sin(math.radians(angle.get())), 10)
-    # d = angle.get()
     print("distance (mm):")
     print(d)
     
     n = d * settings.clock / settings.C 
     print("number of cycles:")
     print(n)
-
-    
-
     bCntlQ.put([settings.stopper, gain.get(), n])
 
 
@@ -387,3 +425,13 @@ def _Mtoggle(m_q_enabler):
     button_M_stop["state"] = "disabled"
     # print(settings.Mstopper)
     # button_M_stop.config(text= 'Stop' if settings.Mstopper else 'Start')
+
+
+def _BF():
+    settings.BF = not settings.BF
+    button_BF.config(text= 'BF: ON' if settings.BF else 'BF: OFF')
+
+def _TGC():
+    settings.TGC = not settings.TGC
+    button_TGC.config(text= 'TCG: ON ' if settings.TGC else 'TGC: OFF')
+

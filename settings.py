@@ -1,11 +1,13 @@
 from sys import platform
 
 def init():
-    global BModePort, MModePort, modeVar, stopper, Mstopper, DebugMode
+    global BModePort, MModePort, modeVar, stopper, Mstopper, DebugMode, TGC, BF
     modeVar = True
     stopper = True
     Mstopper = False
     DebugMode =     0
+    TGC= False
+    BF = False
 
     if platform == "win32":
         print("win32")
@@ -23,8 +25,8 @@ def init():
     C = 1540 *1e3    # mm/s
     sampF = 20*1e6  # MHz
     unit_d = C* (1/sampF) * 0.5
-    start_y = 80
-    end_y = 800
+    start_y = 50
+    end_y = 1000
 
     clock = 200*1e6
 

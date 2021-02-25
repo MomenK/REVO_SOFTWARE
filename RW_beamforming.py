@@ -15,7 +15,7 @@ class PW_BF():
         self.step_x = 63
         self.step_z = 1000
         self.res_mm_x = Pitch/2
-        self.res_mm_z = 0.03
+        self.res_mm_z = 0.01
 
     def t_to_index(self,t):
         index = t*self.sampling_rate
@@ -131,25 +131,28 @@ t0 = time.perf_counter()
 for file in files:
     tt0 = time.perf_counter()
     fileName = str(file).replace(".npy","")
-    fileNameParts = fileName.replace(",", ".").split("_")
-    angle = float(fileNameParts[2])
+    if fileName[1] == 'F':
+        pass
+    else:
+        fileNameParts = fileName.replace(",", ".").split("_")
+        angle = float(fileNameParts[2])
 
-    print("filename: " + fileName, "Angle : " , angle)
+        print("filename: " + fileName, "Angle : " , angle)
 
-    X = np.load(Path +file )
-    # print(XX.shape)
-    X = X-np.mean(X,axis=0)
+        X = np.load(Path +file )
+        # print(XX.shape)
+        X = X-np.mean(X,axis=0)
 
-    Y = Engine.Dyn_R(X,angle)
+        Y = Engine.Dyn_R(X,angle)
 
-    Y_FULL = Y_FULL + Y
-    print(Y_FULL.shape)
+        Y_FULL = Y_FULL + Y
+        print(Y_FULL.shape)
 
-    if angle == 0.0:
-        YY = Y
-        XX = X[0: round(  Engine.step_z*Engine.res_mm_z/(1.540*0.5*(1/20)) ),:]
-    tt1 = time.perf_counter()
-    print('file time: ' + "{:.2f}".format(tt1-tt0))
+        if angle == 0.0:
+            YY = Y
+            XX = X[0: round(  Engine.step_z*Engine.res_mm_z/(1.540*0.5*(1/20)) ),:]
+        tt1 = time.perf_counter()
+        print('file time: ' + "{:.2f}".format(tt1-tt0))
 
 t1 = time.perf_counter()
 print('total time: ' + "{:.2f}".format(t1-t0))

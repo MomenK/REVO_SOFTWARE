@@ -14,9 +14,9 @@ class PW_BF():
         self.C = C
         self.F_num = F_num
         self.step_x = 63
-        self.step_z = 600
+        self.step_z = 400
         self.res_mm_x = Pitch/2
-        self.res_mm_z = 0.05
+        self.res_mm_z = 0.1
 
         self.postion = np.arange(0, 32) 
         self.zeros = np.zeros(32)
@@ -115,22 +115,22 @@ class PW_BF():
           
     #     return Y
 
-    # def Dyn_R(self,X,theta ):
-    #     Y =  np.zeros((self.step_z,self.step_x))
-    #     print(X.shape, Y.shape)
-    #     k = self.kk*self.res_mm_z
-    #     eeP =  self.ee*self.Pitch
-    #     for i in range(0, self.step_x):
-    #         Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
-    #         Dindex = self.t_to_index(Dd_t)  # Check if index is vali
+    def Dyn_R(self,X,theta ):
+        Y =  np.zeros((self.step_z,self.step_x))
+        print(X.shape, Y.shape)
+        k = self.kk*self.res_mm_z
+        eeP =  self.ee*self.Pitch
+        for i in range(0, self.step_x):
+            Dd_t = self.delay_t(k, i*self.res_mm_x ,eeP, theta) 
+            Dindex = self.t_to_index(Dd_t)  # Check if index is vali
 
-    #         Dindex_rounded = np.int32(Dindex+0.5)
-    #         # Dindex_rounded = Dindex.astype(int)
-    #         # Dindex_rounded = np.round(Dindex).astype(int)
-    #         indexes = (Dindex_rounded,self.ee)  # 1000 depth with 32 delays index
+            Dindex_rounded = np.int32(Dindex+0.5)
+            # Dindex_rounded = Dindex.astype(int)
+            # Dindex_rounded = np.round(Dindex).astype(int)
+            indexes = (Dindex_rounded,self.ee)  # 1000 depth with 32 delays index
 
-    #         Y[:,i] = np.sum(X[indexes]*self.mask[i],axis=1) 
-    #     return Y
+            Y[:,i] = np.sum(X[indexes]*self.mask[i],axis=1) 
+        return Y
 
     # def Dyn_R(self,X,theta ):
     #     # kkkZ = self.kkkZ
@@ -189,7 +189,7 @@ class PW_BF():
     #         Y[:,i] = np.sum(diag_arr*self.mask[i],axis=1)        
     #     return Y
 
-    def Dyn_R(self,X,theta ):
+    def Dyn_R_int(self,X,theta ):
         Y =  np.zeros((self.step_z,self.step_x))
         print(X.shape, Y.shape)
         k = self.kk*self.res_mm_z
@@ -296,11 +296,36 @@ class PW_BF():
 # print(index_u)
 
 # ******************************************************************************************************************************************************************
+from scipy import signal
+
+
+def butter_highpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
+
+def butter_highpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = signal.filtfilt(b, a, data)
+    return y
+
+
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = signal.filtfilt(b, a, data)
+    return y
 
 from os import listdir
 from os.path import isfile, join
 
-Path = './UserSessions/tube_short/RFArrays/'
+Path = './UserSessions/Leg/RFArrays/'
 # Path = './RFArrays/'
 files = listdir(Path)
 
@@ -312,10 +337,10 @@ Y_FULL =  np.zeros((Engine.step_z,Engine.step_x))
 #     print(i)
 t0 = time.perf_counter()
 
-# angles = range(-1,2)
+angles = range(-10,11)
 
 # angles = range(-10,11)
-angles = np.arange(-5,6,0.5)
+# angles = np.arange(-5,6,0.5)
 
 for file in files:
     tt0 = time.perf_counter()
@@ -332,10 +357,21 @@ for file in files:
         if angle in angles:
             print("filename: " + fileName, "Angle : " , angle)
             X = np.load(Path +file )
-            # print(XX.shape)
-            X = X-np.mean(X[0:1000,:],axis=0)
 
-            Y = Engine.Dyn_R(X,angle)
+            X = butter_highpass_filter(X.T,3*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+            # X = butter_highpass_filter(X.T,9*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+            # X = X-np.mean(X,axis=0)
+
+
+            z_axis = np.arange(0,X.shape[0]) * 1.540*0.5*(1/20)
+            TGC_dB = 0.5*5 * z_axis/10
+            TGC = 10**(TGC_dB/20)
+            X = (X.T * TGC).T
+            # print(XX.shape)
+            # X = X-np.mean(X[0:1000,:],axis=0)
+
+
+            Y = Engine.Dyn_R_int(X,angle)
 
             Y_FULL = Y_FULL + Y
             # print(Y_FULL.shape)
@@ -350,8 +386,8 @@ t1 = time.perf_counter()
 print('total time: ' + "{:.2f}".format(t1-t0))
 
 XX_en = np.abs(hilbert(XX))
-YY_en = np.abs(hilbert(YY))
-Y_FULL_en = np.abs(hilbert(Y_FULL))
+YY_en = np.abs(hilbert(YY)) + 1
+Y_FULL_en = np.abs(hilbert(Y_FULL)) + 1
 
 plt.figure()
 plt.subplot(131)

@@ -15,14 +15,61 @@ import math
 import os
 from pathlib import Path
 
-Path = './UserSessions/tube/RFArrays/'
+from scipy import signal
+
+
+def butter_highpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
+
+def butter_highpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = signal.filtfilt(b, a, data)
+    return y
+
+
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = signal.filtfilt(b, a, data)
+    return y
+
+
+aspect = 0.1
+Path = './UserSessions/Leg2/RFArrays/'
 file = 'BF.npy'
+file = 'B_80,0_0,0.npy'
 
 X = np.load(Path +file )
+
+
+X = butter_highpass_filter(X.T,5*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+# X = butter_lowpass_filter(X.T,10*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+
+z_axis = np.arange(0,X.shape[0]) * 1.540*0.5*(1/20)
+TGC_dB = 0.5*5 * z_axis/10
+
+TGC = 10**(TGC_dB/20)
+
+X = (X.T * TGC).T
+
+
+
 # X = X-np.mean(X,axis=0)
 XX= np.abs(hilbert(X))
 
-YY = 20*np.log10(XX)
+YY = 20*np.log10(XX+1)
+
+
+
+
 
 
 
@@ -48,13 +95,13 @@ root.maxsize(1200, 1000) # width x height
 fig = plt.figure(figsize =(8,8) )# 
 
 plt.subplot(121)
-image = plt.imshow(XX, cmap='gray',extent=[0,31* 0.3,XX.shape[0] *1.540*0.5*(1/20),0],  aspect=0.7)
+image = plt.imshow(XX, cmap='gray',  aspect=aspect)
 plt.title('Image')
 plt.xlabel('Width (mm)')
 plt.ylabel('Depth (mm)')
 
 plt.subplot(122)
-image_c = plt.imshow(YY, cmap='gray',extent=[0,31* 0.3,XX.shape[0] *1.540*0.5*(1/20),0],  aspect=0.7)
+image_c = plt.imshow(YY, cmap='gray',  aspect=aspect)
 plt.title('Compressed Image')
 plt.xlabel('Width (mm)')
 plt.ylabel('Depth (mm)')
