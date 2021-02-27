@@ -27,6 +27,7 @@ def send_data(port, channel, address, data):
 def short_pulse(num_cycles):
     list = ['000\n'] *200
     offset = 5
+    pwm = 0
     freq = 5 *1e6  # 5*1e6
     settings.clock #  200*1e6
     clock_per_cycle = settings.clock/freq
@@ -38,13 +39,15 @@ def short_pulse(num_cycles):
         list = ['011\n'] *200
     if num_cycles >= 0.5:
         for i in range(offset+0, offset+clock_half_cycle):
-            list[i] = '001\n'
-            end_add = i
+            if i > offset+0 + pwm and i <  offset+clock_half_cycle - pwm:
+                list[i] = '001\n'
+                end_add = i
 
     if num_cycles >= 1:
         for i in range(offset+clock_half_cycle, offset+2*clock_half_cycle):
-            list[i] = '010\n'
-            end_add = i
+            if i > offset+clock_half_cycle + pwm and i <  offset+2*clock_half_cycle - pwm:
+                list[i] = '010\n'
+                end_add = i
 
     if num_cycles == 2:
         for i in range(offset+2*clock_half_cycle, offset+3*clock_half_cycle):
@@ -69,7 +72,7 @@ def short_pulse(num_cycles):
 # lines = f.readlines()
 # f.close()
 
-lines = short_pulse(2)
+lines = short_pulse(0.5)
 # print(lines)
 
 ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial port
@@ -93,10 +96,10 @@ for J in range(0,32):
 
 
 
-# my_list = lines
-# with open('your_file.txt', 'w') as f:
-#     for item in my_list:
-#         f.write(item)
+my_list = lines
+with open('your_file.txt', 'w') as f:
+    for item in my_list:
+        f.write(item)
 
     
 

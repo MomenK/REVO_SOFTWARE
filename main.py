@@ -5,30 +5,35 @@ import settings
 import multiprocessing
 import time
 
-def BModeTask(port,bDateQ,bCntlQ):
+def BModeTask(port,bDateQ,bCntlQ,bEnQ,bFbQ):
     ser = RSerial(port,8*1000000,2048*32,32)
     enabler = True  
     # local_gain = 0
     # local_angle = 0
     t1 = time.perf_counter()
+    ser.set_HPF()
     ser.write_gain(80)
     ser.write_angle(0)
+   
     while True:
         if not bCntlQ.empty():
             bCntlD = bCntlQ.get_nowait()
-            enabler = bCntlD[0]
-            gain = bCntlD[1]
-            num_cycle = bCntlD[2]
+            # enabler = bCntlD[0]
+            gain = bCntlD[0]
+            num_cycle = bCntlD[1]
             # if gain != local_gain: #write the gain value
             # local_gain = gain
             gain_hex = ser.write_gain(int(gain))
             print(gain, gain_hex)
             
+            
             # if angle != local_angle:
             # local_angle = angle
             ser.write_angle(num_cycle)
+            bFbQ.put([gain,num_cycle])
 
-             
+        if not bEnQ.empty():
+            enabler = bEnQ.get_nowait()
 
         if  enabler:
             try:
@@ -96,20 +101,22 @@ if __name__ == '__main__':
 
     settings.init()
 
-    bDateQ = multiprocessing.Queue()
-    bCntlQ = multiprocessing.Queue()
+    bDateQ = multiprocessing.Queue() # Data from serial port client
+    bCntlQ = multiprocessing.Queue() # Ctrl SPI from root client
+    bEnQ = multiprocessing.Queue()   # Enable from root client
+    bFbQ = multiprocessing.Queue()   # Feedback from serial port client
 
     m_q = multiprocessing.Queue()
     m_q_enabler = multiprocessing.Queue()
     m_q_fps = multiprocessing.Queue()
    
-    BModeInstance=multiprocessing.Process(None,BModeTask,args=(settings.BModePort,bDateQ,bCntlQ))
+    BModeInstance=multiprocessing.Process(None,BModeTask,args=(settings.BModePort,bDateQ,bCntlQ,bEnQ,bFbQ))
     MModeInstance=multiprocessing.Process(None,MModeTask,args=(settings.MModePort,m_q,m_q_enabler,m_q_fps))
 
     BModeInstance.start()
     MModeInstance.start()
    
-    plot(BModeInstance, bDateQ, bCntlQ ,m_q,m_q_fps,m_q_enabler,MModeInstance)
+    plot(BModeInstance, bDateQ, bCntlQ , bEnQ, bFbQ ,m_q,m_q_fps,m_q_enabler,MModeInstance)
     
     BModeInstance.join()
     MModeInstance.join()

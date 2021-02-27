@@ -43,14 +43,14 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 
 
 aspect = 0.1
-Path = './UserSessions/Leg2/RFArrays/'
-file = 'BF.npy'
-file = 'B_80,0_0,0.npy'
+Path = './UserSessions/SaveNext/RFArrays/'
+# file = 'BF.npy'
+file = 'B_80,0_-10,0.npy'
 
 X = np.load(Path +file )
 
 
-X = butter_highpass_filter(X.T,5*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+X = butter_highpass_filter(X.T,1*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
 # X = butter_lowpass_filter(X.T,10*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
 
 z_axis = np.arange(0,X.shape[0]) * 1.540*0.5*(1/20)

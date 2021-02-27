@@ -30,6 +30,11 @@ def init():
 
     clock = 200*1e6
 
+    global start_a, end_a, step_a
+    start_a = -10
+    end_a = 10
+    step_a = 1
+
 # init()
     
 # from sys import platform

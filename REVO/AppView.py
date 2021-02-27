@@ -50,9 +50,11 @@ import settings
 
 
 
-def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
+def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     global root, canvas, image, label , var, var1, gain, angle, fig, ax, Hist, fig1, folder, Engine
-    global button_stop, button_M_stop, button_TGC, button_BF
+    global button_stop, button_M_stop, button_TGC, button_BF, button_SaveNext, SaveNext
+
+    SaveNext = False
     Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 1.75)
     # Create root object
     root = Tk()
@@ -111,13 +113,13 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     gain.set(80)
 
     angle = DoubleVar()
-    scale_angle = Scale( left_frame, variable = angle, orient=HORIZONTAL,from_=-10, to=10, resolution=0.5, length=300, label='Angle (12-51 dB)' ) 
+    scale_angle = Scale( left_frame, variable = angle, orient=HORIZONTAL,from_=settings.start_a, to=settings.end_a, resolution=settings.step_a, length=300, label='Angles' ) 
     angle.set(0)
 
    
     #  Buttons
     button_M_stop= Button(master=left_frame,bg='whitesmoke', text="Record M-mode", command=lambda:_Mtoggle(m_q_enabler))
-    button_stop = Button(master=left_frame,bg='whitesmoke', text="Stop", command=lambda:_toggle(bCntlQ))
+    button_stop = Button(master=left_frame,bg='whitesmoke', text="Stop", command=lambda:_toggle(bEnQ))
     button_Mode = Button(master=left_frame,bg='whitesmoke', text="Mode", command=_mode)
 
     button_Save = Button(master=left_frame,bg='whitesmoke', text="Save", command=_save)
@@ -125,7 +127,7 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
 
     button_BF = Button(master=left_frame,bg='whitesmoke', text="BF: OFF", command=_BF)
     button_TGC = Button(master=left_frame,bg='whitesmoke', text="TGC: OFF", command=_TGC)
-    # button_ProgramSave = Button(master=left_frame,bg='whitesmoke', text="Program&Save", command=lambda:_ProgramSave(bCntlQ))
+    button_SaveNext = Button(master=left_frame,bg='whitesmoke', text="Save&next", command=lambda:_SaveNext(bCntlQ,bFbQ))
     
     #  Grid Place *******************************************************************
     canvas.get_tk_widget().grid(row=1, column=0, padx=5, pady=5, sticky='n')
@@ -154,38 +156,33 @@ def plot(BModeInstance, bDateQ, bCntlQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
     button_Save.grid(row=9, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
     button_BF.grid(row=10, column=0, padx=5, pady=5, sticky='w'+'e'+'n')
     button_TGC.grid(row=10, column=1, padx=5, pady=5, sticky='w'+'e'+'n')
-    # button_ProgramSave.grid(row=9, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_SaveNext.grid(row=9, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
 
-   
-
-    
 
     # Hist.get_tk_widget().grid(row=1, column=0,columnspan=4, padx=20, pady=5, sticky='W')
 
     # Start App task
-    updateplot(bDateQ,bCntlQ)
+    updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,)
     M_updateplot(m_q, m_q_fps)
     root.mainloop()
 
 
-
-def updateplot(q,q_enabler):
+def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
     
-    global DataToPlot, result_RF
+    global DataToPlot, result_RF, SaveNext
     try:    
-        bDataD =  q.get_nowait() 
+        bDataD =  bDateQ.get_nowait()
+    except:
+        root.after(1,updateplot,bDateQ,bCntlQ,bEnQ, bFbQ)
+    else: 
+
         result_RF = bDataD[0]
-   
         if settings.DebugMode == 1:
             result_full = result_RF
-        else:
-
-            # result_RF_noMean = result_RF-np.mean(result_RF,axis=0)
-            result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
+        else:  
+            # result_RF_noMean = butter_highpass_filter(result_RF.T,0.075*1e6,20*1e6,order =5).T  # MUS
             # result_RF_noMean = butter_lowpass_filter(result_RF_noMean.T,9*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
-
-            # result_RF_noMean = result_RF - offseter
-     
+            result_RF_noMean = result_RF
             if settings.TGC == True:
                 z_axis = np.arange(0,result_RF_noMean.shape[0]) * 1.540*0.5*(1/20)
                 TGC_dB = 0.5*5 * z_axis/10
@@ -195,21 +192,14 @@ def updateplot(q,q_enabler):
             if settings.BF == True:
                 result_RF_noMean = Engine.Dyn_R(result_RF_noMean,0)
 
-
             result_full = np.abs(hilbert(result_RF_noMean))
           
-            
-            # if angle.get() == 0:
-            # 
-            
-
         # result = result_full [settings.start_y:settings.end_y,:]  #  does not work until u correct scale
         result = result_full
         if settings.DebugMode == 1:
             DataToPlot = result
             image.set_data(DataToPlot)
             image.set_clim(vmin=-1000, vmax=1000)
-
             failed = []
             for i in range(0,31-2):
                 if np.all(DataToPlot[3:,i] == DataToPlot[3:,i+2]) :
@@ -242,19 +232,177 @@ def updateplot(q,q_enabler):
 
             image.set_data(DataToPlot)
             # print(DataToPlot.max(), np.mean(DataToPlot))
-        # p = fig1.gca()
-        # p.clear()
-        # p.hist(DataToPlot.flatten(), 20, range= [-50, 100])
-        # Hist.draw()
+
         canvas.draw()
+        canvas.flush_events()
         text = bDataD[1]
         label.config(text=text, width=len(text))
-        root.after(10,updateplot,q,q_enabler)
+
+        if SaveNext == False:
+            button_SaveNext.update()
+            button_SaveNext["state"] = NORMAL
+        
+        # If the mode is SaveNext .. You need to Save, Update, block until feed back, Enable button, 
+        if SaveNext == True:
+
+            button_SaveNext["state"] = DISABLED
+            button_SaveNext.update()
+
+            SaveNext = False
+            _save()
+            current = angle.get()
+            if current == settings.end_a:
+                new = settings.start_a
+            else:
+                new =  current + settings.step_a
+
+            angle.set(new)
+            _Program(bCntlQ)
+
+            bFbD = bFbQ.get()
+            
+
+            # time.sleep(1)
+
+            # disable button
+
+        root.after(1,updateplot,bDateQ,bCntlQ,bEnQ, bFbQ)
 
         # q_enabler.put([settings.stopper, gain.get()])
-    except:
-        root.after(10,updateplot,q,q_enabler)
 
+        
+
+
+
+
+
+
+def _save():
+    # ax.axis('off')
+    fold = str(folder.get())
+    if fold != "":
+        fold = 'UserSessions/' + fold + '/'
+        print(fold)
+        # os.mkdir("./"+str(fold))
+        Path("./"+str(fold)).mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'Images/').mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'Arrays/').mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'RFArrays/').mkdir(parents=True, exist_ok=True)
+    else:
+        print("Saving at top level")
+
+
+    now = datetime.now()
+    current_time = now.strftime("%H_%M_%S")
+    # print("Current Time =", current_time)
+    
+    # file =  fold + 'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    # file =  'B_' + current_time +"_" +str(angle.get()).replace(".", "_")
+    file =  'B_' + str(gain.get()).replace(".", ",") + "_" +str(angle.get()).replace(".", ",")
+    print(file)
+    Current_Array = DataToPlot
+    Current_RFArray = result_RF
+    fig.savefig(fold +'Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    # ax.axis('on')
+    np.save(fold +'Arrays/' + file,Current_Array)
+    np.save(fold +'RFArrays/' + file,Current_RFArray)
+    if settings.DebugMode == 1:
+        print(Current_Array.shape)
+        np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
+        failed = []
+        for i in range(0,31-2):
+            if np.all(Current_Array[1:,i] == Current_Array[1:,i+2]) :
+                pass
+            else:
+                print(i)
+                x = Current_Array[1:,i] == Current_Array[1:,i+2]
+                # print(x)
+                print(np.where( x == False))
+                failed.append(i)
+        print("Sample of interest is!" + str(Current_Array[20,0]))
+        if (Current_Array[20,0] % 2) == 0:
+            print("Even!")
+        else:
+            print("Odd!")
+
+
+        print(failed)
+        print(len(failed))
+    
+
+
+def _Program(bCntlQ):
+    d = settings.Pitch * round(math.sin(math.radians(angle.get())), 10)
+    print("distance (mm):")
+    print(d)
+    
+    n = d * settings.clock / settings.C 
+    print("number of cycles:")
+    print(n)
+    # bCntlQ.put([settings.stopper, gain.get(), n])
+    bCntlQ.put([ gain.get(), n])
+
+
+# def _SaveNext(bCntlQ,bFbQ):
+#     # disable button
+#     button_SaveNext["state"] = "disabled"
+
+#     _save()
+#     current = angle.get()
+#     if current == settings.end_a:
+#         new = settings.start_a
+#     else:
+#         new =  current + settings.step_a
+#     angle.set(new)
+#     _Program(bCntlQ)
+
+#     bFbD = bFbQ.get()
+
+#     # time.sleep(1)
+#     button_SaveNext["state"] = "normal"
+#     # disable button
+
+def _SaveNext(bCntlQ,bFbQ):
+    global SaveNext
+    if  SaveNext == False:
+        SaveNext = True
+
+# def _noGraphScan:
+#     with q.mutex:
+#     q.queue.clear()
+
+def _toggle(bEnQ):
+    settings.stopper = not settings.stopper
+    bEnQ.put(settings.stopper)
+    button_stop.config(text= 'Stop' if settings.stopper else 'Start')
+
+def _BF():
+    settings.BF = not settings.BF
+    button_BF.config(text= 'BF: ON' if settings.BF else 'BF: OFF')
+
+def _TGC():
+    settings.TGC = not settings.TGC
+    button_TGC.config(text= 'TCG: ON ' if settings.TGC else 'TGC: OFF')
+
+def _quitAll(process,M_process, top):
+    global quitter
+    quitter = True
+    process.terminate()
+    M_process.terminate()
+    top.quit()
+    top.destroy()
+
+def _mode():
+    settings.modeVar = not settings.modeVar
+
+
+
+
+
+# ************************************************ M-Mode ******************************************
+def _Mtoggle(m_q_enabler):
+    m_q_enabler.put(True)
+    button_M_stop["state"] = "disabled"
 
 
 def M_updateplot(m_q,m_q_fps):
@@ -268,7 +416,7 @@ def M_updateplot(m_q,m_q_fps):
         # M_mode_plot(M_Image,M_timestamp,M_timestamp)
         root.after(10,M_updateplot,m_q,m_q_fps)
     except:
-        root.after(1,M_updateplot,m_q,m_q_fps)
+        root.after(10,M_updateplot,m_q,m_q_fps)
    
 def M_mode_plot(agg,boy,timestampArr):
     print('Plotting M mode')
@@ -331,107 +479,3 @@ def M_mode_plot(agg,boy,timestampArr):
     button_M_stop["state"] = "normal"
     plt.show()
     return
-
-def _quitAll(process,M_process, top):
-    global quitter
-    quitter = True
-    process.terminate()
-    M_process.terminate()
-    top.quit()
-    top.destroy()
-
-def _mode():
-    settings.modeVar = not settings.modeVar
-
-def _save():
-    # ax.axis('off')
-    fold = str(folder.get())
-    if fold != "":
-        fold = 'UserSessions/' + fold + '/'
-        print(fold)
-        # os.mkdir("./"+str(fold))
-        Path("./"+str(fold)).mkdir(parents=True, exist_ok=True)
-        Path("./"+str(fold)+'Images/').mkdir(parents=True, exist_ok=True)
-        Path("./"+str(fold)+'Arrays/').mkdir(parents=True, exist_ok=True)
-        Path("./"+str(fold)+'RFArrays/').mkdir(parents=True, exist_ok=True)
-    else:
-        print("Saving at top level")
-
-
-    now = datetime.now()
-    current_time = now.strftime("%H_%M_%S")
-    # print("Current Time =", current_time)
-    
-    # file =  fold + 'B_' + str(time.ctime()).replace(" ", "_").replace(":", "")
-    # file =  'B_' + current_time +"_" +str(angle.get()).replace(".", "_")
-    file =  'B_' + str(gain.get()).replace(".", ",") + "_" +str(angle.get()).replace(".", ",")
-    print(file)
-    Current_Array = DataToPlot
-    Current_RFArray = result_RF
-    fig.savefig(fold +'Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
-    # ax.axis('on')
-    np.save(fold +'Arrays/' + file,Current_Array)
-    np.save(fold +'RFArrays/' + file,Current_RFArray)
-    if settings.DebugMode == 1:
-        print(Current_Array.shape)
-        np.savetxt("bar.csv", Current_Array, delimiter=",",fmt='%5.1f')
-        failed = []
-        for i in range(0,31-2):
-            if np.all(Current_Array[1:,i] == Current_Array[1:,i+2]) :
-                pass
-            else:
-                print(i)
-                x = Current_Array[1:,i] == Current_Array[1:,i+2]
-                # print(x)
-                print(np.where( x == False))
-                failed.append(i)
-        print("Sample of interest is!" + str(Current_Array[20,0]))
-        if (Current_Array[20,0] % 2) == 0:
-            print("Even!")
-        else:
-            print("Odd!")
-
-
-        print(failed)
-        print(len(failed))
-    
-def _toggle(bCntlQ):
-    settings.stopper = not settings.stopper
-    bCntlQ.put([settings.stopper, gain.get(), 0])
-    button_stop.config(text= 'Stop' if settings.stopper else 'Start')
-
-def _Program(bCntlQ):
-    d = settings.Pitch * round(math.sin(math.radians(angle.get())), 10)
-    print("distance (mm):")
-    print(d)
-    
-    n = d * settings.clock / settings.C 
-    print("number of cycles:")
-    print(n)
-    bCntlQ.put([settings.stopper, gain.get(), n])
-
-
-def _ProgramSave(bCntlQ):
-    _Program(bCntlQ)
-    time.sleep(3)
-    _save()
-
-def _Mtoggle(m_q_enabler):
-    # global settings.Mstopper
-    # settings.Mstopper = not settings.Mstopper
-    
-    m_q_enabler.put(True)
-    # button_M_stop.config(text= 'Stop')
-    button_M_stop["state"] = "disabled"
-    # print(settings.Mstopper)
-    # button_M_stop.config(text= 'Stop' if settings.Mstopper else 'Start')
-
-
-def _BF():
-    settings.BF = not settings.BF
-    button_BF.config(text= 'BF: ON' if settings.BF else 'BF: OFF')
-
-def _TGC():
-    settings.TGC = not settings.TGC
-    button_TGC.config(text= 'TCG: ON ' if settings.TGC else 'TGC: OFF')
-

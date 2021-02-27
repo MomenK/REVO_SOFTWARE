@@ -52,13 +52,62 @@ class RSerial(serial.Serial):
         # time.sleep(0.1)
         pass
 
+    def set_HPF(self):
+        super().write(bytearray(b'\xff\xff')) # Choose mode/reset
+        super().write(bytearray(b'\x00\x04')) # set mode to SPI
+        
+        self.write_spi( '2000000') # swith to VGA
+        self.write_spi( '1000000') # swith to VGA
+
+#  Power mode seems to work fine.
+        self.write_spi( '2E50000') # set 
+        self.write_spi( '1E50000') # set
+
+        # self.write_spi( '2E50001') # set 
+        # self.write_spi( '1E50001') # set
+
+#  The HPF seems to be working fine.. need to disable TR_external pins
+        self.write_spi( '2E60000') # set 
+        self.write_spi( '1E60000') # set
+
+        # self.write_spi( '2E6001F') # set 
+        # self.write_spi( '1E6001F') # set
+
+        # self.write_spi( '2C70000') # set 
+        # self.write_spi( '1C70000') # set
+
+        # self.write_spi( '2C70400') # set 
+        # self.write_spi( '1C70400') # set
+
+
+#  The LPF seems to be working fine
+        self.write_spi( '2C70000') # set 
+        self.write_spi( '1C70000') # set
+
+        # self.write_spi( '2C70100') # set 
+        # self.write_spi( '1C70100') # set
+
+        # self.write_spi( '2C70080') # set 
+        # self.write_spi( '1C70080') # set
+
+        # self.write_spi( '2C70180') # set 
+        # self.write_spi( '1C70180') # set
+
+        # self.write_spi( '2000001') # swith to VGA
+        # self.write_spi( '1000001') # swith to VGA
+
+        super().write(bytearray(b'\xff\xff')) # Choose mode/reset
+        super().write(bytearray(b'\x00\x03')) # set to pulsering
+        pass
+
+
     def write_gain(self,gain):
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
         super().write(bytearray(b'\x00\x04')) # set mode to SPI
 
-        self.write_spi( '2000000')
-        self.write_spi( '2000010')
-        self.write_spi( '1000010')
+        
+        self.write_spi( '2000010')  # swith to DTGC
+        self.write_spi( '1000010')  # swith to DTGC
 
         gain_hex = ['00' + hex(gain).split('x')[-1]][-1][-3:]
         self.write_spi( '1B50' + gain_hex)
@@ -67,6 +116,10 @@ class RSerial(serial.Serial):
         self.write_spi( '1B68000')
         self.write_spi( '2B68000')
 
+        self.write_spi( '2000000') # swith to VGA
+        self.write_spi( '1000000') # swith to VGA
+
+        # 
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
         super().write(bytearray(b'\x00\x03')) # set to pulsering
         return gain_hex
