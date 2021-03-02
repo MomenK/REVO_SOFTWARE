@@ -12,7 +12,7 @@ def BModeTask(port,bDateQ,bCntlQ,bEnQ,bFbQ):
     # local_angle = 0
     t1 = time.perf_counter()
     ser.set_HPF()
-    ser.write_gain(80)
+    
     ser.write_angle(0)
    
     while True:

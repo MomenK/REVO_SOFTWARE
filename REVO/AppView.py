@@ -180,9 +180,9 @@ def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
         if settings.DebugMode == 1:
             result_full = result_RF
         else:  
-            # result_RF_noMean = butter_highpass_filter(result_RF.T,0.075*1e6,20*1e6,order =5).T  # MUS
+            result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
             # result_RF_noMean = butter_lowpass_filter(result_RF_noMean.T,9*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
-            result_RF_noMean = result_RF
+            # result_RF_noMean = result_RF
             if settings.TGC == True:
                 z_axis = np.arange(0,result_RF_noMean.shape[0]) * 1.540*0.5*(1/20)
                 TGC_dB = 0.5*5 * z_axis/10
@@ -214,7 +214,7 @@ def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
                 print("Even!")
             # else:
             #     print("Odd!")
-            if not (DataToPlot[20,0]   == 147): 
+            if not (DataToPlot[20,0]   == 47): 
                 print("Sample of interest is :" + str(DataToPlot[20,:]))
                 assert True, "DOGSHITE"
 

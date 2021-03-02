@@ -11,11 +11,13 @@ class RSerial(serial.Serial):
         self.buff_size = buff_size
         self.Channels = Channels     
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
-        super().write(bytearray(b'\x00\x03')) # set to pulsering
+        super().write(bytearray(b'\x30\x03')) # set to pulsering
    
     def fetch(self):
         super().flushInput()
         super().flushOutput()
+        super().write(bytearray(b'\xff\xff')) # Choose mode/reset
+        super().write(bytearray(b'\x30\x03')) # set to pulsering
         super().write(bytearray(b'\xfa\x0a')) # Trigger
         data = super().read(self.buff_size)
         # assert len(data) == self.buff_size , 'Connection issue we got '+ str(len(data)) + ' Instead of ' + str(self.buff_size)
@@ -54,7 +56,7 @@ class RSerial(serial.Serial):
 
     def set_HPF(self):
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
-        super().write(bytearray(b'\x00\x04')) # set mode to SPI
+        super().write(bytearray(b'\x40\x04')) # set mode to SPI
         
         self.write_spi( '2000000') # swith to VGA
         self.write_spi( '1000000') # swith to VGA
@@ -93,17 +95,14 @@ class RSerial(serial.Serial):
         # self.write_spi( '2C70180') # set 
         # self.write_spi( '1C70180') # set
 
-        # self.write_spi( '2000001') # swith to VGA
-        # self.write_spi( '1000001') # swith to VGA
-
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
-        super().write(bytearray(b'\x00\x03')) # set to pulsering
+        super().write(bytearray(b'\x30\x03')) # set to pulsering
         pass
 
 
     def write_gain(self,gain):
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
-        super().write(bytearray(b'\x00\x04')) # set mode to SPI
+        super().write(bytearray(b'\x40\x04')) # set mode to SPI
 
         
         self.write_spi( '2000010')  # swith to DTGC
@@ -121,7 +120,7 @@ class RSerial(serial.Serial):
 
         # 
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
-        super().write(bytearray(b'\x00\x03')) # set to pulsering
+        super().write(bytearray(b'\x30\x03')) # set to pulsering
         return gain_hex
 
 # Beamforiming *******************************************************
@@ -146,7 +145,7 @@ class RSerial(serial.Serial):
 
     def write_angle(self, n):
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
-        super().write(bytearray(b'\x00\x01')) # set mode to beamforming
+        super().write(bytearray(b'\x10\x01')) # set mode to beamforming
         
         # if n > 0:
         #     for i in range(0,32):
@@ -159,5 +158,5 @@ class RSerial(serial.Serial):
                 self.send_data(i, round(n* i) + 500)
 
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
-        super().write(bytearray(b'\x00\x03')) # set to pulsering
+        super().write(bytearray(b'\x30\x03')) # set to pulsering
 

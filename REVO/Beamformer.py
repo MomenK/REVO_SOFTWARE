@@ -14,9 +14,9 @@ class PW_BF():
         self.C = C
         self.F_num = F_num
         self.step_x = 63
-        self.step_z = 380
+        self.step_z = 760
         self.res_mm_x = Pitch/2
-        self.res_mm_z = 0.1
+        self.res_mm_z = 0.05
 
         self.postion = np.arange(0, 32) 
         self.zeros = np.zeros(32)

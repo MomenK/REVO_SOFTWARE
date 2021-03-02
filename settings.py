@@ -31,9 +31,9 @@ def init():
     clock = 200*1e6
 
     global start_a, end_a, step_a
-    start_a = -10
-    end_a = 10
-    step_a = 1
+    start_a = -20
+    end_a = 20
+    step_a = 0.5
 
 # init()
     

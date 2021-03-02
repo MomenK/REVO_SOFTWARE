@@ -14,9 +14,9 @@ class PW_BF():
         self.C = C
         self.F_num = F_num
         self.step_x = 63
-        self.step_z = 400
+        self.step_z = 760
         self.res_mm_x = Pitch/2
-        self.res_mm_z = 0.1
+        self.res_mm_z = 0.05
 
         self.postion = np.arange(0, 32) 
         self.zeros = np.zeros(32)
@@ -325,7 +325,9 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 from os import listdir
 from os.path import isfile, join
 
-Path = './UserSessions/Leg/RFArrays/'
+file_name= 'Chicken_75LPF_B'
+Path = './UserSessions/'+ file_name +'/RFArrays/'
+ImagPath = './UserSessions/'+ file_name +'Image/'
 # Path = './RFArrays/'
 files = listdir(Path)
 
@@ -337,7 +339,7 @@ Y_FULL =  np.zeros((Engine.step_z,Engine.step_x))
 #     print(i)
 t0 = time.perf_counter()
 
-angles = range(-10,11)
+# angles = range(-10,11)
 
 # angles = range(-10,11)
 # angles = np.arange(-5,6,0.5)
@@ -346,7 +348,7 @@ for file in files:
     tt0 = time.perf_counter()
     fileName = str(file).replace(".npy","")
     print()
-    if fileName[1] == 'F':
+    if 'F' in fileName:
         pass
     else:
         fileNameParts = fileName.replace(",", ".").split("_")
@@ -354,7 +356,8 @@ for file in files:
 
         
 
-        if angle in angles:
+        # if angle in angles:
+        if True:
             print("filename: " + fileName, "Angle : " , angle)
             X = np.load(Path +file )
 
@@ -389,7 +392,7 @@ XX_en = np.abs(hilbert(XX))
 YY_en = np.abs(hilbert(YY)) + 1
 Y_FULL_en = np.abs(hilbert(Y_FULL)) + 1
 
-plt.figure()
+fig = plt.figure()
 plt.subplot(131)
 Image = plt.imshow(XX_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,XX_en.shape[0] *1.540*0.5*(1/20),0], animated=False,  aspect=1)
 plt.subplot(132)
@@ -397,7 +400,7 @@ Image = plt.imshow(YY_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_e
 plt.subplot(133)
 Image = plt.imshow(Y_FULL_en,cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
 
-plt.figure()
+fig1 = plt.figure()
 plt.subplot(131)
 Image = plt.imshow(20*np.log10(XX_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,XX_en.shape[0] *1.540*0.5*(1/20),0], animated=False,  aspect=1)
 # Image.set_clim(vmin=10, vmax=60)
@@ -408,8 +411,12 @@ plt.subplot(133)
 Image = plt.imshow(20*np.log10(Y_FULL_en),cmap='gray',interpolation='None',extent=[0,31* 0.3,YY_en.shape[0] * Engine.res_mm_z,0],animated=False, aspect=1)
 # Image.set_clim(vmin=37, vmax=62)
 
-plt.show()
+
 
 
 np.save(Path +'BF_0' ,YY)
 np.save(Path +'BF' ,Y_FULL)
+
+fig.savefig(Path + file_name + 'BF' + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+fig1.savefig(Path + file_name +'BF_C' + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+plt.show()

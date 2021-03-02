@@ -37,6 +37,8 @@ def short_pulse(num_cycles):
 
     if num_cycles == 0:
         list = ['011\n'] *200
+        list[0] = '001\n'
+        list[1] = '001\n'
     if num_cycles >= 0.5:
         for i in range(offset+0, offset+clock_half_cycle):
             if i > offset+0 + pwm and i <  offset+clock_half_cycle - pwm:
@@ -72,14 +74,14 @@ def short_pulse(num_cycles):
 # lines = f.readlines()
 # f.close()
 
-lines = short_pulse(0.5)
+lines = short_pulse(2)
 # print(lines)
 
 ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial port
 ser.flushInput()
 ser.flushOutput()
 ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
-ser.write(bytearray(b'\x00\x02')) # set mode to Pulseforming
+ser.write(bytearray(b'\x20\x02')) # set mode to Pulseforming
 
 
 

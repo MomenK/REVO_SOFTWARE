@@ -25,7 +25,7 @@ ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial por
 ser.flushInput()
 ser.flushOutput()
 ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
-ser.write(bytearray(b'\x00\x04')) # set mode to SPI
+ser.write(bytearray(b'\x40\x04')) # set mode to SPI
 
 f = open("full12x14.mif", "r")
 lines = f.readlines()
@@ -37,5 +37,5 @@ for line in lines:
 
     write_spi(ser, command)
     if command == '2000002':
-        time.sleep(11)
+        time.sleep(10)
 

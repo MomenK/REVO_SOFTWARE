@@ -35,7 +35,7 @@ ser = serial.Serial(settings.BModePort, 8*1000000, timeout=2)  # open serial por
 ser.flushInput()
 ser.flushOutput()
 ser.write(bytearray(b'\xff\xff')) # Choose mode/reset
-ser.write(bytearray(b'\x00\x04')) # set mode to SPI
+ser.write(bytearray(b'\x40\x04')) # set mode to SPI
 # ser.write(bytearray(b'\x00\x00')) # This is needed some
 
 
