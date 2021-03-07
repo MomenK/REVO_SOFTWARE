@@ -14,9 +14,9 @@ class PW_BF():
         self.C = C
         self.F_num = F_num
         self.step_x = 63
-        self.step_z = 760
+        self.step_z = 760*5
         self.res_mm_x = Pitch/2
-        self.res_mm_z = 0.05
+        self.res_mm_z = 0.05/5
 
         self.postion = np.arange(0, 32) 
         self.zeros = np.zeros(32)
@@ -325,13 +325,13 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 from os import listdir
 from os.path import isfile, join
 
-file_name= 'Chicken_75LPF_B'
+file_name= 'S_2_D'
 Path = './UserSessions/'+ file_name +'/RFArrays/'
 ImagPath = './UserSessions/'+ file_name +'Image/'
 # Path = './RFArrays/'
 files = listdir(Path)
 
-Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 2)
+Engine = PW_BF(sampling_rate = 20 ,Pitch = 0.3, C= 1.54, F_num= 1)
 Y_FULL =  np.zeros((Engine.step_z,Engine.step_x))
 
 
@@ -361,7 +361,7 @@ for file in files:
             print("filename: " + fileName, "Angle : " , angle)
             X = np.load(Path +file )
 
-            X = butter_highpass_filter(X.T,3*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+            X = butter_highpass_filter(X.T,1*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
             # X = butter_highpass_filter(X.T,9*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
             # X = X-np.mean(X,axis=0)
 

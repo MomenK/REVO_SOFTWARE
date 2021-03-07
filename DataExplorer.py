@@ -41,10 +41,24 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     y = signal.filtfilt(b, a, data)
     return y
 
+start = 400
+end = start+2500
 
-aspect = 0.3
-Path = './UserSessions/Chicken_10LPF_B/RFArrays/'
+too = 105
+fromm = too - 65
+
+# tooC = 140 
+# frommC = tooC - 65
+
+tooC = 130 
+frommC = tooC - 65
+
+
+aspect = 1
+file_name= 'S_2_D'
+Path = './UserSessions/'+ file_name +'/RFArrays/'
 file = 'BF.npy'
+# file = 'BF_0.npy'
 # file = 'B_80,0_-10,0.npy'
 
 X = np.load(Path +file )
@@ -69,14 +83,16 @@ YY = 20*np.log10(XX+1)
 
 
 
-
-
+print(XX.shape)
+XX =XX[start:end,:]
+YY =YY[start:end,:]
+print(XX.shape)
 
 
 
 def _Update(self):
     print(var.get(), var1.get())
-    image_c.set_clim(vmin=var1.get(), vmax= var.get())
+    image_c.set_clim(vmin=varC1.get(), vmax= varC.get())
     image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
     canvas.draw()
 
@@ -85,6 +101,28 @@ def _quitAll( top):
     top.quit()
     top.destroy()
 
+def _save():
+    print("ll")
+    fig.savefig( 'Output.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+
+    extent = fig1.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    # fig.savefig('ax2_figure.png', bbox_inches=extent)
+    xOffset = -0.3
+    extent.x0 += xOffset
+    extent.x1 += xOffset
+
+    fig.savefig('Output1.png', bbox_inches=extent.expanded(1.3, 1.2))
+
+    extent = fig2.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    # fig.savefig('ax2_figure.png', bbox_inches=extent)
+    xOffset = -0.3
+    extent.x0 += xOffset
+    extent.x1 += xOffset
+
+    fig.savefig('Output2.png', bbox_inches=extent.expanded(1.3, 1.2))
+
+    pass
+
 
 root = Tk()
 root.wm_title("Data Explorere")  
@@ -92,19 +130,22 @@ root.protocol("WM_DELETE_WINDOW", lambda: _quitAll(root))
 root.maxsize(1200, 1000) # width x height
 # root.config(bg="white")
 
-fig = plt.figure(figsize =(8,8) )# 
+fig = plt.figure(figsize =(7,7) )# 
 
-plt.subplot(121)
-image = plt.imshow(XX, cmap='gray',  aspect=aspect)
+
+fig1 = plt.subplot(121)
+image = plt.imshow(XX, cmap='gray',  aspect=aspect, extent=[0,31* 0.3,XX.shape[0] * 0.01,0])
 plt.title('Image')
 plt.xlabel('Width (mm)')
 plt.ylabel('Depth (mm)')
 
-plt.subplot(122)
-image_c = plt.imshow(YY, cmap='gray',  aspect=aspect)
-plt.title('Compressed Image')
+fig2 = plt.subplot(122)
+image_c = plt.imshow(YY, cmap='gray',  aspect=aspect, extent=[0,31* 0.3,YY.shape[0] * 0.01,0])
+plt.title('Log-compressed Image')
 plt.xlabel('Width (mm)')
 plt.ylabel('Depth (mm)')
+
+plt.tight_layout()
 
 canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
 canvas.draw()
@@ -113,17 +154,39 @@ canvas.draw()
 var = DoubleVar()
 scale = Scale( root, variable = var, orient=HORIZONTAL,from_=1, to=150, resolution=0.5, \
     length=300, label='Dynamic range (dB)', command=_Update ) 
-scale.set(70)
+scale.set(too)
 
 var1 = DoubleVar()
 scale1 = Scale( root, variable = var1, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, \
     length=300, label='Reject (dB)' , command=_Update) 
 
-scale1.set(0)
+scale1.set(fromm)
 
-canvas.get_tk_widget().grid(row=1, column=0, padx=5, pady=5, sticky='n')
-scale.grid(row=2, column=0,columnspan=3 , padx=5, pady=5, sticky='n')
-scale1.grid(row=3, column=0,columnspan=3,  padx=5, pady=5, sticky='n')
+varC = DoubleVar()
+scaleC = Scale( root, variable = varC, orient=HORIZONTAL,from_=1, to=150, resolution=0.5, \
+    length=300, label='Dynamic range (dB)', command=_Update ) 
+scaleC.set(tooC)
+
+varC1 = DoubleVar()
+scaleC1 = Scale( root, variable = varC1, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, \
+    length=300, label='Reject (dB)' , command=_Update) 
+
+scaleC1.set(frommC)
+
+button_Save = Button(bg='whitesmoke', text="Save", command=_save)
+
+canvas.get_tk_widget().grid(row=1, column=0,columnspan=4, padx=5, pady=5, sticky='n')
+scale.grid(row=2, column=0,columnspan=2 , padx=5, pady=5, sticky='n')
+scale1.grid(row=3, column=0,columnspan=2,  padx=5, pady=5, sticky='n')
+scaleC.grid(row=2, column=2,columnspan=2 , padx=5, pady=5, sticky='n')
+scaleC1.grid(row=3, column=2,columnspan=2,  padx=5, pady=5, sticky='n')
+
+button_Save.grid(row=4, column=0, columnspan=4,padx=5, pady=5, sticky='w'+'e'+'n'+'s')
 
 
 root.mainloop()
+
+
+
+
+
