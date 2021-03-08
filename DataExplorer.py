@@ -44,18 +44,21 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 start = 400
 end = start+2500
 
-too = 105
-fromm = too - 65
+too = 70
+fromm = too - 55
+
+# too = 105
+# fromm = too - 65
 
 # tooC = 140 
 # frommC = tooC - 65
 
-tooC = 130 
-frommC = tooC - 65
+tooC = 90
+frommC = tooC - 55
 
 
 aspect = 1
-file_name= 'S_2_D'
+file_name= 'T_3_B1'
 Path = './UserSessions/'+ file_name +'/RFArrays/'
 file = 'BF.npy'
 # file = 'BF_0.npy'
@@ -72,7 +75,7 @@ TGC_dB = 0.5*5 * z_axis/10
 
 TGC = 10**(TGC_dB/20)
 
-X = (X.T * TGC).T
+# X = (X.T * TGC).T
 
 
 

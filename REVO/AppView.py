@@ -260,21 +260,12 @@ def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
             _Program(bCntlQ)
 
             bFbD = bFbQ.get()
-            
-
-            # time.sleep(1)
-
-            # disable button
 
         root.after(1,updateplot,bDateQ,bCntlQ,bEnQ, bFbQ)
 
         # q_enabler.put([settings.stopper, gain.get()])
 
         
-
-
-
-
 
 
 def _save():
@@ -343,33 +334,10 @@ def _Program(bCntlQ):
     bCntlQ.put([ gain.get(), n])
 
 
-# def _SaveNext(bCntlQ,bFbQ):
-#     # disable button
-#     button_SaveNext["state"] = "disabled"
-
-#     _save()
-#     current = angle.get()
-#     if current == settings.end_a:
-#         new = settings.start_a
-#     else:
-#         new =  current + settings.step_a
-#     angle.set(new)
-#     _Program(bCntlQ)
-
-#     bFbD = bFbQ.get()
-
-#     # time.sleep(1)
-#     button_SaveNext["state"] = "normal"
-#     # disable button
-
 def _SaveNext(bCntlQ,bFbQ):
     global SaveNext
     if  SaveNext == False:
         SaveNext = True
-
-# def _noGraphScan:
-#     with q.mutex:
-#     q.queue.clear()
 
 def _toggle(bEnQ):
     settings.stopper = not settings.stopper
@@ -420,14 +388,23 @@ def M_updateplot(m_q,m_q_fps):
    
 def M_mode_plot(agg,boy,timestampArr):
     print('Plotting M mode')
-    result = np.array(agg)
+
+
+
     timeStamp = np.array(timestampArr)
-    Mimage =  result
+    Mimage =  np.array(agg)
     # print(Mimage.shape)
     Mimage = Mimage.transpose(1,0,2)
     # print(Mimage.shape)
     Mimage = Mimage.reshape((1024,-1))
     print(Mimage.shape)
+
+    result_RF = Mimage
+    result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
+    result = np.abs(hilbert(result_RF_noMean))
+
+
+
     # print(len(boy))
     plt.close()
     plt.figure()
@@ -459,13 +436,55 @@ def M_mode_plot(agg,boy,timestampArr):
         plt.xlabel('Time (s)')
         plt.ylabel('Depth (mm)')
     #   # Has to be passed from inside the other process
+    # plt.show()
+    # SAVING
     file =  'M_' + str(time.ctime()).replace(" ", "_").replace(":", "")
+    
+    fold = str(folder.get())
+    if fold != "":
+        fold = 'UserSessions/' + fold + '/'
+        print(fold)
+        # os.mkdir("./"+str(fold))
+        Path("./"+str(fold)).mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'M_Images/').mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'M_Arrays/').mkdir(parents=True, exist_ok=True)
+        Path("./"+str(fold)+'M_RFArrays/').mkdir(parents=True, exist_ok=True)
+    else:
+        print("Saving at top level")
+
+    
     # saving image really slow stuff
     # plt.axis('off')
-    plt.savefig('Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    plt.savefig( fold +'M_Images/'  + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
     plt.axis('on')
-    np.save('Arrays/' + file,Mimage)
-    np.save('Arrays/' + 'T'+ file,timeStamp)
+    np.save( fold +'M_Arrays/' + file,result)
+    np.save(fold +'M_RFArrays/' + file,result_RF)
+    np.save(fold +'M_Arrays/' + 'T'+ file,timeStamp)
+   
+
+    # fold = str(folder.get())
+    # if fold != "":
+    #     fold = 'UserSessions/' + fold + '/'
+    #     print(fold)
+    #     # os.mkdir("./"+str(fold))
+    #     Path("./"+str(fold)).mkdir(parents=True, exist_ok=True)
+    #     Path("./"+str(fold)+'M_Images/').mkdir(parents=True, exist_ok=True)
+    #     Path("./"+str(fold)+'M_Arrays/').mkdir(parents=True, exist_ok=True)
+    #     Path("./"+str(fold)+'M_RFArrays/').mkdir(parents=True, exist_ok=True)
+    # else:
+    #     print("Saving at top level")
+
+    # file =  'M_' + str(gain.get()).replace(".", ",") + "_" +str(angle.get()).replace(".", ",")
+    # print(file)
+
+    # # Current_Array = DataToPlot
+    # # Current_RFArray = result_RF
+    # fig.savefig(fold +'M_Images/' + file + '.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    # # # ax.axis('on')
+    # np.save(fold +'M_Arrays/' + file,result)
+    # np.save(fold +'M_RFArrays/' + file,result_RF)
+
+
     fps = []
     for i in range(0,1000-1):
         fps.append(1/(timeStamp[i+1] - timeStamp [i]))

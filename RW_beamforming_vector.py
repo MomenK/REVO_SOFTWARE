@@ -325,7 +325,7 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 from os import listdir
 from os.path import isfile, join
 
-file_name= 'S_2_D'
+file_name= 'T_1_B1'
 Path = './UserSessions/'+ file_name +'/RFArrays/'
 ImagPath = './UserSessions/'+ file_name +'Image/'
 # Path = './RFArrays/'
@@ -361,7 +361,7 @@ for file in files:
             print("filename: " + fileName, "Angle : " , angle)
             X = np.load(Path +file )
 
-            X = butter_highpass_filter(X.T,1*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+            X = butter_highpass_filter(X.T,5*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
             # X = butter_highpass_filter(X.T,9*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
             # X = X-np.mean(X,axis=0)
 
