@@ -5,7 +5,7 @@ def init():
     modeVar = True
     stopper = True
     Mstopper = False
-    DebugMode =     0
+    DebugMode =     1
     TGC= False
     BF = False
 

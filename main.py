@@ -47,9 +47,9 @@ def BModeTask(port,bDateQ,bCntlQ,bEnQ,bFbQ):
                 
 
 def MModeTask(port,m_q,m_q_enabler,m_q_fps):
-    ser = RSerial(port,8*1000000,2048*2,2)  # 16 bits mode
+    # ser = RSerial(port,8*1000000,2048*2,2)  # 16 bits mode
     # ser = RSerial('COM4',8*1000000,2048*1,2)   # 8 bits mode
-    # ser = RUSBfifo(2048*2,2)  # 16 bits mode
+    ser = RUSBfifo(2048*2,2)  # 16 bits mode
     enabler = False
     counter = 0
     agg = []
@@ -76,7 +76,7 @@ def MModeTask(port,m_q,m_q_enabler,m_q_fps):
                 if counter == 1:
                     print('started M_mode capture at ' + time.ctime())
 
-                if counter == 1000:
+                if counter == 6000:
                     print("Processing M_mode Image: "+time.ctime())
                     Q = [ agg, timestampArr ]
           

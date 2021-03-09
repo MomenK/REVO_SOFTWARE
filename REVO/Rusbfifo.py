@@ -16,8 +16,10 @@ class RUSBfifo(Device):
     #    super().flush()
         # time.sleep(0.001)
         super().write(bytearray([240]))
+        time.sleep(0.0003)
+        # super().write(bytearray([0]))
        
-        time.sleep(0.001)
+        # time.sleep(0.001)
        
 
         data = bytearray(super().read(self.buff_size))
@@ -31,7 +33,7 @@ class RUSBfifo(Device):
 
         
 
-        return data2
+        return data1.T
 
 
 # USE CASE:
