@@ -73,7 +73,7 @@ def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MMod
     Hist_window.grid(row=10, column=0,columnspan=4 , padx=5, pady=5, sticky='NWSE')
 
     # Create Figure 
-    fig = plt.figure(figsize =(8,8), facecolor = 'white' )#   
+    fig = plt.figure(figsize =(10,10), facecolor = 'white' )#   
     # ax = fig.gca()
     img =  np.zeros((1024,32))
     if settings.DebugMode == 1:
@@ -430,9 +430,19 @@ def M_mode_plot(agg,boy,timestampArr):
         print(failed)
         print(len(failed))
     else:
-        Image = plt.imshow(Mimage,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
-        Image.set_data(Mimage)
-        Image.set_clim(vmin=0, vmax=var.get()/100 * 4096)
+        if settings.modeVar:
+            M_Data = 20*np.log10(result)
+            Image = plt.imshow(M_Data,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+            Image.set_clim(vmin=var1.get(), vmax= var.get())
+
+        else:
+            M_Data =  result
+            Image = plt.imshow(M_Data,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+            Image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
+
+        
+        # Image.set_data(Mimage)
+        # Image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
         plt.xlabel('Time (s)')
         plt.ylabel('Depth (mm)')
     #   # Has to be passed from inside the other process
