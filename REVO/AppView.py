@@ -192,7 +192,8 @@ def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
             if settings.BF == True:
                 result_RF_noMean = Engine.Dyn_R(result_RF_noMean,0)
 
-            result_full = np.abs(hilbert(result_RF_noMean))
+            result_full = np.abs(hilbert(result_RF_noMean.T)).T
+            # result_full = np.abs(hilbert(result_RF_noMean))
           
         # result = result_full [settings.start_y:settings.end_y,:]  #  does not work until u correct scale
         result = result_full
@@ -401,7 +402,7 @@ def M_mode_plot(agg,boy,timestampArr):
 
     result_RF = Mimage
     result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
-    result = np.abs(hilbert(result_RF_noMean))
+    result = np.abs(hilbert(result_RF_noMean.T)).T
 
 
 

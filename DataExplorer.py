@@ -41,7 +41,7 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     y = signal.filtfilt(b, a, data)
     return y
 
-start = 400
+start = 0
 end = start+2500
 
 too = 70
@@ -58,7 +58,7 @@ frommC = tooC - 55
 
 
 aspect = 1
-file_name= 'T_3_B1'
+file_name= 'Ratt_7_F'
 Path = './UserSessions/'+ file_name +'/RFArrays/'
 file = 'BF.npy'
 # file = 'BF_0.npy'
@@ -80,7 +80,8 @@ TGC = 10**(TGC_dB/20)
 
 
 # X = X-np.mean(X,axis=0)
-XX= np.abs(hilbert(X))
+XX= np.abs(hilbert(X.T)).T
+# XX= np.abs(hilbert(X))
 
 YY = 20*np.log10(XX+1)
 
