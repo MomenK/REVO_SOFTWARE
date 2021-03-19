@@ -11,6 +11,10 @@ class RUSBfifo(Device):
         self.Channels = Channels
         super().open()
         super().flush()
+        # New line
+        super().ftdi_fn.ftdi_read_data_set_chunksize(0x10000)
+        super().ftdi_fn.ftdi_write_data_set_chunksize(0x10000)
+        # *****************
 
     def fetch(self):
     #    super().flush()

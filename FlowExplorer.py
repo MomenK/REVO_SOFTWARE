@@ -41,10 +41,13 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     y = signal.filtfilt(b, a, data)
     return y
 
-start = 0
-end = start+4000
-
-too = 70
+start = 260
+# i = 9
+# 400, 200, 200,200,200,400,400,200,200
+# start = [400, 200, 200,200,200,400,400,200,200]
+# start = start[i-1]
+end = start+ 400
+too = 60
 fromm = too - 55
 
 # too = 105
@@ -53,51 +56,53 @@ fromm = too - 55
 # tooC = 140 
 # frommC = tooC - 65
 
-tooC = 90
+tooC = 60
 frommC = tooC - 55
 
+res = 0.01
+aspect = 0.5
+file_name= 'N45_140'
+# file_name= 'Mice_'+str(i)+'_B'
+Path = './UserSessions/Unfocused_flow/'+ file_name +'/M_RFArrays/'
+file = 'data.npy'
 
-aspect = 1
-file_name= 'S_3_B'
-Path = './UserSessions/'+ file_name +'/RFArrays/'
-file = 'BF.npy'
-# file = 'BF_0.npy'
-# file = 'B_80,0_-10,0.npy'
+T_Path = './UserSessions/Unfocused_flow/'+ file_name +'/M_Arrays/'
+T_file = 'time.npy'
+T = np.load(T_Path +T_file )
+
+T_end = T[-1]-T[0]
+print(T[0],T[-1],T_end, 1/(T[1]-T[0]))
+
 
 X = np.load(Path +file )
-
-
-# X = butter_highpass_filter(X.T,5*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
-# X = butter_lowpass_filter(X.T,8*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
+X = butter_highpass_filter(X.T,1*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
 
 z_axis = np.arange(0,X.shape[0]) * 1.540*0.5*(1/20)
 TGC_dB = 0.5*5 * z_axis/10
-
 TGC = 10**(TGC_dB/20)
 
-# X = (X.T * TGC).T
+img = hilbert(X.T).T  #Mother fucker
+print(np.amax(img))
+img= img/np.amax(img)
+img = np.abs(img)
+print(img.shape)
 
-
-
-# X = X-np.mean(X,axis=0)
-XX= np.abs(hilbert(X.T)).T
-# XX= np.abs(hilbert(X))
+XX= img
 
 YY = 20*np.log10(XX)
 
 
 
 print(XX.shape)
-XX =XX[start:end,:]
-YY =YY[start:end,:]
+# XX =XX[start:end,0:12000]
+YY =YY[start:end,0:12000]
 print(XX.shape)
-
 
 
 def _Update(self):
     print(var.get(), var1.get())
-    image_c.set_clim(vmin=varC1.get(), vmax= varC.get())
-    image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
+    image_c.set_clim(vmin= -varC.get(), vmax= 0)
+    # image.set_clim(vmin=10**(-var.get()/20), vmax= 1)
     canvas.draw()
 
 
@@ -107,7 +112,7 @@ def _quitAll( top):
 
 def _save():
     print("ll")
-    fig.savefig( 'Output.png' ,bbox_inches='tight', pad_inches = 0,dpi = 500)
+    fig.savefig( 'Output.png' ,bbox_inches='tight', pad_inches = 0.2,dpi = 500)
 
     extent = fig1.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     # fig.savefig('ax2_figure.png', bbox_inches=extent)
@@ -123,7 +128,7 @@ def _save():
     extent.x0 += xOffset
     extent.x1 += xOffset
 
-    fig.savefig('Output2.png', bbox_inches=extent.expanded(1.3, 1.2))
+    fig.savefig('Output2.png', bbox_inches=extent.expanded(1.4, 1.2))
 
     pass
 
@@ -137,17 +142,17 @@ root.maxsize(1200, 1000) # width x height
 fig = plt.figure(figsize =(7,7) )# 
 
 
-fig1 = plt.subplot(121)
-image = plt.imshow(XX, cmap='gray',  aspect=aspect, extent=[0,31* 0.3,XX.shape[0] * 0.01,0])
-plt.title('Image')
-plt.xlabel('Width (mm)')
-plt.ylabel('Depth (mm)')
+# fig1 = plt.subplot(121)
+# # image = plt.imshow(XX, cmap='gray',  aspect=aspect, extent=[0,T_end,XX.shape[0] * res,0])
+# plt.title('Image')
+# plt.xlabel('Width (mm)')
+# plt.ylabel('Depth (mm)')
 
-fig2 = plt.subplot(122)
-image_c = plt.imshow(YY, cmap='gray',  aspect=aspect, extent=[0,31* 0.3,YY.shape[0] * 0.01,0])
+fig2 = plt.subplot(111)
+image_c = plt.imshow(YY, cmap='gray',  aspect=aspect, extent=[0,T_end,YY.shape[0] * res,0])
 plt.title('Log-compressed Image')
-plt.xlabel('Width (mm)')
-plt.ylabel('Depth (mm)')
+plt.xlabel('seconds')
+plt.ylabel('mm')
 
 plt.tight_layout()
 
@@ -181,9 +186,9 @@ button_Save = Button(bg='whitesmoke', text="Save", command=_save)
 
 canvas.get_tk_widget().grid(row=1, column=0,columnspan=4, padx=5, pady=5, sticky='n')
 scale.grid(row=2, column=0,columnspan=2 , padx=5, pady=5, sticky='n')
-scale1.grid(row=3, column=0,columnspan=2,  padx=5, pady=5, sticky='n')
+# scale1.grid(row=3, column=0,columnspan=2,  padx=5, pady=5, sticky='n')
 scaleC.grid(row=2, column=2,columnspan=2 , padx=5, pady=5, sticky='n')
-scaleC1.grid(row=3, column=2,columnspan=2,  padx=5, pady=5, sticky='n')
+# scaleC1.grid(row=3, column=2,columnspan=2,  padx=5, pady=5, sticky='n')
 
 button_Save.grid(row=4, column=0, columnspan=4,padx=5, pady=5, sticky='w'+'e'+'n'+'s')
 
