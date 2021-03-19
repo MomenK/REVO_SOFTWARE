@@ -11,32 +11,46 @@ class RUSBfifo(Device):
         self.Channels = Channels
         super().open()
         super().flush()
+
+        # data = bytearray(super().read(self.buff_size))
+        # while(len(data) != self.buff_size):
+        # # while True:
+        #     super().write(bytearray([240]))
+        #     time.sleep(0.001)
+        #     data = bytearray(super().read(self.buff_size))
+        # print(  super().ftdi_fn.ftdi_get_latency_timer())
         # New line
-        super().ftdi_fn.ftdi_read_data_set_chunksize(0x10000)
-        super().ftdi_fn.ftdi_write_data_set_chunksize(0x10000)
-        # *****************
+        # super().ftdi_fn.ftdi_read_data_set_chunksize(0x10000)
+        # super().ftdi_fn.ftdi_write_data_set_chunksize(0x10000)
+        # # super().ftdi_fn.ftdi_set_latency_timer(16)
+        # # *****************
+        # super().write(bytearray([240]))
+        # time.sleep(0.001)
+        # data = bytearray(super().read(self.buff_size))
 
     def fetch(self):
-    #    super().flush()
+       
         # time.sleep(0.001)
         super().write(bytearray([240]))
-        time.sleep(0.0003)
+        # time.sleep(0.0003)
         # super().write(bytearray([0]))
        
         # time.sleep(0.001)
-       
-
+        # print(  super().ftdi_fn.ftdi_get_latency_timer())
+ 
         data = bytearray(super().read(self.buff_size))
-        super().flush()
+        # super().flush() 
 
-        if len(data) != self.buff_size: 
+        if len(data) != self.buff_size:
+                # time.sleep(0.01)
                 raise ValueError('Connection issue we got '+ str(len(data)) + ' Instead of ' + str(self.buff_size))
+                
             
         data1 = np.frombuffer(data, dtype=np.int16, count=-1).reshape(self.Channels,-1)
-        data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
+        # data2 = np.abs(hilbert(data1.T-np.mean(data1,axis=1)))
 
         
-
+        
         return data1.T
 
 

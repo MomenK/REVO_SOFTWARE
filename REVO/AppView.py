@@ -73,7 +73,7 @@ def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MMod
     Hist_window.grid(row=10, column=0,columnspan=4 , padx=5, pady=5, sticky='NWSE')
 
     # Create Figure 
-    fig = plt.figure(figsize =(10,10), facecolor = 'white' )#   
+    fig = plt.figure(figsize =(8,8), facecolor = 'white' )#   
     # ax = fig.gca()
     img =  np.zeros((1024,32))
     if settings.DebugMode == 1:
