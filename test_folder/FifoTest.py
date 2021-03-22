@@ -1,7 +1,7 @@
 from pylibftdi import Driver, Device
 
 import numpy as np
-from scipy.signal import hilbert, chirp
+# from scipy.signal import hilbert, chirp
 import time
 
 class RUSBfifo(Device):
@@ -11,7 +11,7 @@ class RUSBfifo(Device):
         self.Channels = Channels
         # super().close()
         # super().open()
-        # super().flush()
+        super().flush()
 
         # data = bytearray(super().read(self.buff_size))
         # while(len(data) != self.buff_size):
@@ -21,9 +21,10 @@ class RUSBfifo(Device):
         #     data = bytearray(super().read(self.buff_size))
         # print(  super().ftdi_fn.ftdi_get_latency_timer())
         # New line
-        # super().ftdi_fn.ftdi_read_data_set_chunksize(0x10000)
+        super().ftdi_fn.ftdi_read_data_set_chunksize(0x10000)
         # super().ftdi_fn.ftdi_write_data_set_chunksize(0x10000)
-        # # super().ftdi_fn.ftdi_set_latency_timer(16)
+        # super().ftdi_fn.ftdi_set_latency_timer(255)
+        print(super().ftdi_fn.ftdi_read_data_get_chunksize())
         # # *****************
         # super().write(bytearray([240]))
         # time.sleep(0.001)
@@ -56,5 +57,5 @@ class RUSBfifo(Device):
 
 
 # USE CASE:
-# dev = RUSBfifo(2048*2,2)
-# dev.fetch()
+dev = RUSBfifo(2048*2,2)
+dev.fetch()
