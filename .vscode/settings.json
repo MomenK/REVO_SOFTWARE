@@ -1,7 +1,7 @@
-// {
-//     "python.pythonPath": "/home/monx/Desktop/PhD/bin/python3"
-// }
-
 {
-    "python.pythonPath": "C:\\Users\\themo\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+    "python.pythonPath": "/home/monx/Desktop/PhD/bin/python3"
 }
+
+// {
+//     "python.pythonPath": "C:\\Users\\themo\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+// }

@@ -21,8 +21,8 @@ def init():
         MModePort = "/dev/COM4"
     
     global start_y, end_y, C, Pitch, unit_d, sampF, clock, offset_correction
-
-    offset_correction = 50 + 2
+    # offset in Pyserial and offset  in the begin of programmed pulser file
+    offset_correction = 1*(50 + 2)
 
     Pitch = 0.3 # mm
     C = 1540 *1e3    # mm/s

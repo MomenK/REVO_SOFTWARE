@@ -153,7 +153,7 @@ class RSerial(serial.Serial):
         # else:   
         #     for i in range(0,32):
         #         self.send_data(i, round(n*(i - 31)) )
-
+        
         for i in range(0,32):
                 self.send_data(i, round(n* i) + 500)
 
@@ -165,7 +165,7 @@ class RSerial(serial.Serial):
     def write_focus_depth(self, n):
         super().write(bytearray(b'\xff\xff')) # Choose mode/reset
         super().write(bytearray(b'\x10\x01')) # set mode to beamforming
-        
+        # n[16] = 1000
         for i in range(0,32):
                 self.send_data(i, n[i] + 500)
 

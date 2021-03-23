@@ -192,6 +192,7 @@ def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
         else:  
 
             result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
+            # result_RF_noMean = result_RF
             result_RF_noMean = result_RF_noMean[settings.start_y+settings.offset_correction:-1,:]
 
             if settings.TGC == True:
@@ -424,7 +425,9 @@ def M_mode_plot(agg,boy,timestampArr):
 
     result_RF = Mimage
     result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
+    result_RF_noMean = result_RF_noMean[settings.start_y+settings.offset_correction:-1,:]
     result = np.abs(hilbert(result_RF_noMean.T)).T
+    result = result[0:settings.end_y,:]
 
 
 
@@ -453,17 +456,19 @@ def M_mode_plot(agg,boy,timestampArr):
         print(failed)
         print(len(failed))
     else:
+        
         if settings.modeVar:
             M_Data = 20*np.log10(result)
-            Image = plt.imshow(M_Data,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+            Image = plt.imshow(M_Data,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , settings.end_y* settings.unit_d, settings.start_y* settings.unit_d ], aspect='auto')
             Image.set_clim(vmin=var1.get(), vmax= var.get())
 
         else:
             M_Data =  result
-            Image = plt.imshow(M_Data,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , 1024*1.498*0.5*(1/20),0], aspect='auto')
+            Image = plt.imshow(M_Data,cmap='gray', extent=[0,timestampArr[-1] - timestampArr[0] , settings.end_y* settings.unit_d, settings.start_y* settings.unit_d ], aspect='auto')
             Image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
 
         
+
         # Image.set_data(Mimage)
         # Image.set_clim(vmin=10**(var1.get()/20), vmax= 10**(var.get()/20))
         plt.xlabel('Time (s)')
