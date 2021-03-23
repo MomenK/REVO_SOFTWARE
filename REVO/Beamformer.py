@@ -6,6 +6,7 @@ from scipy.signal import hilbert, chirp
 import math
 from scipy.interpolate import interp1d, interp2d, interpn
 import time
+import settings
 
 class PW_BF():
     def __init__(self, sampling_rate, Pitch, C, F_num):
@@ -13,10 +14,13 @@ class PW_BF():
         self.Pitch = Pitch
         self.C = C
         self.F_num = F_num
-        self.step_x = 63
-        self.step_z = 760
         self.res_mm_x = Pitch/2
         self.res_mm_z = 0.05
+        max_depth =  settings.unit_d* settings.end_y
+        self.step_x = 63
+        self.step_z = int(round(max_depth/self.res_mm_z)) - 10
+        print(self.step_z)
+        # self.step_z = 700
 
         self.postion = np.arange(0, 32) 
         self.zeros = np.zeros(32)

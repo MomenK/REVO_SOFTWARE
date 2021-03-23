@@ -4,6 +4,7 @@ from REVO.AppView import plot
 import settings
 import multiprocessing
 import time
+import numpy as np
 
 def BModeTask(port,bDateQ,bCntlQ,bEnQ,bFbQ):
     ser = RSerial(port,8*1000000,2048*32,32)
@@ -16,6 +17,7 @@ def BModeTask(port,bDateQ,bCntlQ,bEnQ,bFbQ):
     ser.write_angle(0)
    
     while True:
+        # print("Writing FOCUS")
         if not bCntlQ.empty():
             bCntlD = bCntlQ.get_nowait()
             # enabler = bCntlD[0]
@@ -29,7 +31,16 @@ def BModeTask(port,bDateQ,bCntlQ,bEnQ,bFbQ):
             
             # if angle != local_angle:
             # local_angle = angle
-            ser.write_angle(num_cycle)
+            
+            if isinstance(num_cycle,  (list, tuple, np.ndarray)):
+                print("Writing FOCUS")
+                print(num_cycle + 500)
+                ser.write_focus_depth(num_cycle)
+            else:
+                print("Writing ANGLE")
+                ser.write_angle(num_cycle)
+
+
             bFbQ.put([gain,num_cycle])
 
         if not bEnQ.empty():

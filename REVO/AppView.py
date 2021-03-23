@@ -51,7 +51,7 @@ import settings
 
 
 def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MModeInstance):
-    global root, canvas, image, label , var, var1, gain, angle, fig, ax, Hist, fig1, folder, Engine
+    global root, canvas, image, label , var, var1, gain, angle, fig, ax, Hist, fig1, folder, Engine, Focus_depth
     global button_stop, button_M_stop, button_TGC, button_BF, button_SaveNext, SaveNext
 
     SaveNext = False
@@ -69,8 +69,8 @@ def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MMod
 
     left_frame = Frame(root, width=200, height= 400, bg='whitesmoke')
     left_frame.grid(row=0, column=0, padx=10, pady=5, sticky='NWSE')
-    Hist_window = Frame(left_frame, width=200, height=200, bg='whitesmoke')
-    Hist_window.grid(row=10, column=0,columnspan=4 , padx=5, pady=5, sticky='NWSE')
+    # Hist_window = Frame(left_frame, width=200, height=200, bg='whitesmoke')
+    # Hist_window.grid(row=10, column=0,columnspan=4 , padx=5, pady=5, sticky='NWSE')
 
     # Create Figure 
     fig = plt.figure(figsize =(8,8), facecolor = 'white' )#   
@@ -83,13 +83,15 @@ def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MMod
             extent=[0, 31* settings.Pitch, settings.end_y* settings.unit_d, settings.start_y* settings.unit_d ], aspect=1)
         plt.xlabel('Width (mm)')
         plt.ylabel('Depth (mm)')
+
+        print(settings.end_y* settings.unit_d, settings.start_y* settings.unit_d)
     
     canvas = FigureCanvasTkAgg(fig, master=right_frame)  # A tk.DrawingArea.
     canvas.draw()
     
-    fig1 = plt.figure(figsize =(4,4), facecolor = 'whitesmoke' )# 
-    Hist = FigureCanvasTkAgg(fig1, master=Hist_window)  # A tk.DrawingArea.
-    Hist.draw()
+    # fig1 = plt.figure(figsize =(4,4), facecolor = 'whitesmoke' )# 
+    # Hist = FigureCanvasTkAgg(fig1, master=Hist_window)  # A tk.DrawingArea.
+    # Hist.draw()
 
     # FPS label 
     prompt = 'fps'
@@ -98,8 +100,11 @@ def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MMod
  
     # Entry 
     label_folder = Label(master= left_frame, text="Folder name")
+    Focus_depth_label = Label(master= left_frame, text="Focus Depth")
 
-    folder = Entry(master =left_frame )    
+    folder = Entry(master =left_frame )  
+    Focus_depth = Entry(master =left_frame ) 
+
     # Create scale/ Dynamic range max is 20*np.log10(4095) = 72.25
     var = DoubleVar()
     scale = Scale( left_frame, variable = var, orient=HORIZONTAL,from_=1, to=100, resolution=0.5, length=300, label='Dynamic range (dB)' ) 
@@ -151,12 +156,17 @@ def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MMod
     scale_gain.grid(row=7, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
     scale_angle.grid(row=8, column=0,columnspan=4,  padx=5, pady=5, sticky='n')
 
+    Focus_depth_label.grid(row=9, column=0,columnspan=2,  padx=5, pady=5, sticky='n')
+    Focus_depth.grid(row=9, column=2,columnspan=2,  padx=5, pady=5, sticky='n')
+
     
-    button_Program.grid(row=9, column=0, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
-    button_Save.grid(row=9, column=1, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
-    button_BF.grid(row=10, column=0, padx=5, pady=5, sticky='w'+'e'+'n')
-    button_TGC.grid(row=10, column=1, padx=5, pady=5, sticky='w'+'e'+'n')
-    button_SaveNext.grid(row=9, column=2, padx=5, pady=5, sticky='w'+'e'+'n'+'s')
+    button_Program.grid(row=10, column=0, padx=5, pady=5, sticky='w'+'e'+'n')
+    button_Save.grid(row=10, column=1, padx=5, pady=5, sticky='w'+'e'+'n')
+    button_SaveNext.grid(row=10, column=2, padx=5, pady=5, sticky='w'+'e'+'n')
+
+    button_BF.grid(row=11, column=0, padx=5, pady=5, sticky='w'+'e'+'n')
+    button_TGC.grid(row=11, column=1, padx=5, pady=5, sticky='w'+'e'+'n')
+    
 
 
     # Hist.get_tk_widget().grid(row=1, column=0,columnspan=4, padx=20, pady=5, sticky='W')
@@ -168,7 +178,6 @@ def plot(BModeInstance, bDateQ, bCntlQ, bEnQ, bFbQ, m_q,m_q_fps,m_q_enabler,MMod
 
 
 def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
-    
     global DataToPlot, result_RF, SaveNext
     try:    
         bDataD =  bDateQ.get_nowait()
@@ -177,12 +186,14 @@ def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
     else: 
 
         result_RF = bDataD[0]
+
         if settings.DebugMode == 1:
             result_full = result_RF
         else:  
+
             result_RF_noMean = butter_highpass_filter(result_RF.T,1*1e6,20*1e6,order =5).T  # MUS
-            # result_RF_noMean = butter_lowpass_filter(result_RF_noMean.T,9*1e6,20*1e6,order =5).T  # MUST BE ROW ARRAY 32*1000
-            # result_RF_noMean = result_RF
+            result_RF_noMean = result_RF_noMean[settings.start_y+settings.offset_correction:-1,:]
+
             if settings.TGC == True:
                 z_axis = np.arange(0,result_RF_noMean.shape[0]) * 1.540*0.5*(1/20)
                 TGC_dB = 0.5*5 * z_axis/10
@@ -191,12 +202,12 @@ def updateplot(bDateQ,bCntlQ,bEnQ, bFbQ,):
 
             if settings.BF == True:
                 result_RF_noMean = Engine.Dyn_R(result_RF_noMean,0)
+ 
 
             result_full = np.abs(hilbert(result_RF_noMean.T)).T
-            # result_full = np.abs(hilbert(result_RF_noMean))
-          
-        # result = result_full [settings.start_y:settings.end_y,:]  #  does not work until u correct scale
-        result = result_full
+      
+        result = result_full[0:settings.end_y,:]
+
         if settings.DebugMode == 1:
             DataToPlot = result
             image.set_data(DataToPlot)
@@ -324,13 +335,24 @@ def _save():
 
 
 def _Program(bCntlQ):
-    d = settings.Pitch * round(math.sin(math.radians(angle.get())), 10)
-    print("distance (mm):")
-    print(d)
-    
-    n = d * settings.clock / settings.C 
-    print("number of cycles:")
-    print(n)
+    depth = Focus_depth.get()
+    if len(depth) > 0:
+        depth = float(depth)*1e-3
+        x_axis = (np.arange(0,32)-16) * settings.Pitch*1e-3
+        delays = depth/(settings.C*1e-3) * (1 - np.sqrt( 1+ (x_axis/depth)**2  ) )
+        print(delays)
+        n = np.round(delays * 200*1e6).astype("int")
+        print(n)
+
+    else:
+        d = settings.Pitch * round(math.sin(math.radians(angle.get())), 10)
+        # print("distance (mm):")
+        # print(d)
+        
+        n = d * settings.clock / settings.C 
+        print("number of cycles:")
+        print(n)
+
     # bCntlQ.put([settings.stopper, gain.get(), n])
     bCntlQ.put([ gain.get(), n])
 
@@ -364,9 +386,9 @@ def _quitAll(process,M_process, top):
 def _mode():
     settings.modeVar = not settings.modeVar
 
+# ************************************************ M-Mode ******************************************
 
-
-
+# ************************************************ M-Mode ******************************************
 
 # ************************************************ M-Mode ******************************************
 def _Mtoggle(m_q_enabler):

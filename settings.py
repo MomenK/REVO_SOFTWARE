@@ -20,13 +20,17 @@ def init():
         BModePort = "/dev/COM3"
         MModePort = "/dev/COM4"
     
-    global start_y, end_y, C, Pitch, unit_d, sampF, clock
+    global start_y, end_y, C, Pitch, unit_d, sampF, clock, offset_correction
+
+    offset_correction = 50 + 2
+
     Pitch = 0.3 # mm
     C = 1540 *1e3    # mm/s
     sampF = 20*1e6  # MHz
     unit_d = C* (1/sampF) * 0.5
-    start_y = 50
-    end_y = 1000
+
+    start_y = 0  
+    end_y = 900
 
     clock = 200*1e6
 
